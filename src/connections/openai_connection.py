@@ -6,10 +6,14 @@ import openai
 from openai import OpenAI
 
 class OpenAIConnection(BaseConnection):
-    def __init__(self):
+    def __init__(self, model="gpt-3.5-turbo"):
         super().__init__()
+        self.model = model
         self.actions={
-            "generate_text": {"prompt": "str", "system_prompt": "str"},
+            "generate-text": {
+                "func": self.generate_text,
+                "args": {"prompt": "str", "system_prompt": "str"}
+            },
         }
 
     def configure(self):
@@ -75,5 +79,24 @@ class OpenAIConnection(BaseConnection):
             return False
 
     def perform_action(self, action_name, **kwargs):
-        # TODO: Implement actions
-        pass
+        """Implementation of abstract method from BaseConnection"""
+        if action_name in self.actions:
+            return self.actions[action_name]["func"](**kwargs)
+        raise Exception(f"Unknown action: {action_name}")
+
+    def generate_text(self, prompt : str="Hello!", system_prompt : str="You are a helpful assistant.", **kwargs):
+        # Initialize the client
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        # Make the API call
+        completion = client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": prompt},
+            ],
+        )
+
+        # Return the response
+        response_message = completion.choices[0].message.content
+        return response_message

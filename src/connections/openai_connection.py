@@ -14,6 +14,14 @@ class OpenAIConnection(BaseConnection):
                 "func": self.generate_text,
                 "args": {"prompt": "str", "system_prompt": "str"}
             },
+            "check-model": {
+                "func": self.check_model,
+                "args": {}
+            },
+            "set-model": {
+                "func": self.set_model,
+                "args": {"model": "str"}
+            }
         }
 
     def configure(self):
@@ -100,3 +108,20 @@ class OpenAIConnection(BaseConnection):
         # Return the response
         response_message = completion.choices[0].message.content
         return response_message
+
+    def check_model(self, **kwargs):
+        return self.model
+
+    def set_model(self, model="DELETE THIS", **kwargs):
+        # TODO: Remove model prefilled value, pass model as argument
+        try:
+            # Make sure model exists
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            response = client.models.retrieve(model=model)
+
+            # If we get here, the model exists
+            self.model = model
+            return "\nModel set to: " + self.model
+        except Exception as e:
+            return "\nError setting model: " + str(e)

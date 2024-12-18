@@ -231,7 +231,7 @@ class ZerePyCLI:
 
     def _get_prompt_message(self) -> HTML:
         """Generate the prompt message based on current state"""
-        agent_status = f"({self.agent.name})" if self.agent else "(no agent)"
+        agent_status = f"({self.agent.display_name})" if self.agent else "(no agent)"
         return HTML(f'<prompt>ZerePy-CLI</prompt> {agent_status} > ')
 
     def _handle_command(self, input_string: str) -> None:

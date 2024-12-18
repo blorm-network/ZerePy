@@ -10,6 +10,7 @@ class ZerePyAgent:
     def __init__(
             self,
             name: str,
+            display_name: str,
             model: str,
             model_provider: str,
             connection_manager: ConnectionManager,
@@ -21,6 +22,7 @@ class ZerePyAgent:
             loop_delay: int=30
     ):
         self.name = name
+        self.display_name = display_name
         self.model = model
         self.model_provider = model_provider
         self.connection_manager = connection_manager
@@ -77,6 +79,7 @@ class ZerePyAgent:
     def to_dict(self):
         return {
             "name": self.name,
+            "display_name": self.display_name,
             "model": self.model,
             "model_provider": self.model_provider,
             "bio": self.bio,
@@ -107,11 +110,19 @@ class ZerePyAgent:
         if result:
             self.model = model
             print("Model successfully changed.")
+
+            # Update agent file
+            agent_dict = self.to_dict()
+            create_agent_file_from_dict(agent_dict)
         else:
             print("Model not valid for current provider. No changes made.")
 
     def set_preferred_model_provider(self, model_provider):
         self.model_provider = model_provider
+
+        # Update agent file
+        agent_dict = self.to_dict()
+        create_agent_file_from_dict(agent_dict)
 
     def list_available_models(self):
         self.connection_manager.find_and_perform_action(
@@ -127,6 +138,7 @@ def load_agent_from_file(agent_path: str, connection_manager: ConnectionManager)
         # Create agent object
         agent = ZerePyAgent(
             name=agent_dict["name"],
+            display_name=agent_dict["display_name"],
             model=agent_dict["model"],
             model_provider=agent_dict["model_provider"],
             connection_manager=connection_manager,
@@ -144,7 +156,7 @@ def load_agent_from_file(agent_path: str, connection_manager: ConnectionManager)
     except Exception as e:
         raise Exception(f"An error occurred while loading the agent: {e}")
     
-    logger.info(f"\n✅ Successfully loaded agent: {agent.name}")
+    logger.info(f"\n✅ Successfully loaded agent: {agent.display_name}")
     return agent
 
 

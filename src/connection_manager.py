@@ -4,6 +4,7 @@ from src.connections.base_connection import BaseConnection
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.openai_connection import OpenAIConnection
 from src.connections.twitter_connection import TwitterConnection
+from src.connections.discord_connection import DiscordConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -21,6 +22,8 @@ class ConnectionManager:
             return AnthropicConnection
         elif class_name == "openai":
             return OpenAIConnection
+        elif class_name == "discord":
+            return DiscordConnection
 
         return None
     

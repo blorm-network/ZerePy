@@ -101,8 +101,23 @@ class ZerePyAgent:
     def perform_action(self, connection: str, action: str, **kwargs) -> None:
         return self.connection_manager.perform_action(connection, action, **kwargs)
 
+    def _setup_connections(self):
+        """Setup all connections that have initialization requirements"""
+        # Initialize all connections that need setup
+        for name, connection in self.connection_manager.connections.items():
+            if hasattr(connection, 'start') and connection.is_configured():
+                connection.start(connection_manager=self.connection_manager)
+
+        # Set up LLM provider after all connections are initialized
+        llm_providers = self.connection_manager.get_model_providers()
+        if not llm_providers:
+            raise ValueError("No configured LLM provider found")
+        self.model_provider = llm_providers[0]
+        self.is_llm_set = True
+        
     def loop(self):
         """Main agent loop for autonomous behavior"""
+        self._setup_connections()
         if not self.is_llm_set:
             self._setup_llm_provider()
 

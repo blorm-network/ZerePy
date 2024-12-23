@@ -18,6 +18,9 @@
   "loop_delay": 900,
   "config": [
     {
+      "name": "discord"
+    },
+    {
       "name": "twitter",
       "timeline_read_count": 10,
       "own_tweet_replies_count":2,

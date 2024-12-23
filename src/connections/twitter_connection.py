@@ -216,8 +216,8 @@ class TwitterConnection(BaseConnection):
             "\n📝 To get your Twitter API credentials:",
             "1. Go to https://developer.twitter.com/en/portal/dashboard",
             "2. Create a new project and app if you haven't already",
-            "3. In your app settings, enable OAuth 1.0a with read and write permissions",
-            "4. Get your API Key (consumer key) and API Key Secret (consumer secret)"
+            "3. In your app settings, enable OAuth 1.0a with read and write permissions (this may be enabled by default)",
+            "4. Get your API Key (consumer key) and API Key Secret (consumer secret) for the 'Keys and tokens' tab"
         ]
         logger.info("\n".join(setup_instructions))
         print_h_bar()

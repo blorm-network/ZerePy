@@ -7,16 +7,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
+from typing import Union
 
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
 logger = logging.getLogger("agent")
 
 class ZerePyAgent:
-    def __init__(
-            self,
-            agent_name: str
-    ):
+    def __init__(self, agent_name: str):
         try:        
             agent_path = Path("agents") / f"{agent_name}.json"
             agent_dict = json.load(open(agent_path, "r"))
@@ -25,12 +23,12 @@ class ZerePyAgent:
             if missing_fields:
                 raise KeyError(f"Missing required fields: {', '.join(missing_fields)}")
 
-            self.name = agent_dict["name"]
-            self.bio = agent_dict["bio"]
-            self.traits = agent_dict["traits"]
-            self.examples = agent_dict["examples"]
-            self.loop_delay = agent_dict["loop_delay"] 
-            self.connection_manager = ConnectionManager(agent_dict["config"])
+            self.name: str = agent_dict["name"]
+            self.bio: list[str] = agent_dict["bio"]
+            self.traits: list[str] = agent_dict["traits"]
+            self.examples: list[str] = agent_dict["examples"]
+            self.loop_delay: float = agent_dict["loop_delay"]
+            self.connection_manager: ConnectionManager = ConnectionManager(agent_dict["config"])
             
             # Extract Twitter config
             twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
@@ -38,13 +36,24 @@ class ZerePyAgent:
                 raise KeyError("Twitter configuration is required")
 
             # TODO: These should probably live in the related task parameters
-            self.self_reply_chance = twitter_config.get("self_reply_chance", 0.05)
-            self.tweet_interval = twitter_config.get("tweet_interval", 900)
+            self.self_reply_chance: float = twitter_config.get("self_reply_chance", 0.05)
 
-            self.is_llm_set = False
+            # Extract and validate tweet interval
+            tweet_interval_config = twitter_config.get("tweet_interval", 900)
+            if isinstance(tweet_interval_config, str):
+                tweet_interval_config = tweet_interval_config.lower()
+                if tweet_interval_config != "random":
+                    raise ValueError("String tweet interval must be 'random'")
+            elif not isinstance(tweet_interval_config, (int, float)):
+                raise ValueError("Tweet interval must be a number or 'random'")
+            elif tweet_interval_config <= 0:
+                raise ValueError("Tweet interval must be positive")
+            self.tweet_interval: Union[int, float, str] = tweet_interval_config
+
+            self.is_llm_set: bool = False
             
             # Cache for system prompt
-            self._system_prompt = None
+            self._system_prompt: str = None
 
             # Extract loop tasks
             self.tasks = agent_dict.get("tasks", [])
@@ -138,7 +147,8 @@ class ZerePyAgent:
                     if action_name == "post-tweet":
                         # Check if it's time to post a new tweet
                         current_time = time.time()
-                        if current_time - last_tweet_time >= self.tweet_interval:
+                        interval = self.tweet_interval if self.tweet_interval != "random" else random.randint(300, 1800) # 5-30 minutes
+                        if current_time - last_tweet_time >= interval:
                             logger.info("\n📝 GENERATING NEW TWEET")
                             print_h_bar()
 

@@ -17,7 +17,7 @@ class ZerePyAgent:
             self,
             agent_name: str
     ):
-        try:        
+        try:
             agent_path = Path("agents") / f"{agent_name}.json"
             agent_dict = json.load(open(agent_path, "r"))
 
@@ -29,9 +29,9 @@ class ZerePyAgent:
             self.bio = agent_dict["bio"]
             self.traits = agent_dict["traits"]
             self.examples = agent_dict["examples"]
-            self.loop_delay = agent_dict["loop_delay"] 
+            self.loop_delay = agent_dict["loop_delay"]
             self.connection_manager = ConnectionManager(agent_dict["config"])
-            
+
             # Extract Twitter config
             twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
             if not twitter_config:
@@ -42,7 +42,7 @@ class ZerePyAgent:
             self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
 
             self.is_llm_set = False
-            
+
             # Cache for system prompt
             self._system_prompt = None
 
@@ -52,18 +52,18 @@ class ZerePyAgent:
 
             # Set up empty agent state
             self.state = {}
-            
+
         except Exception as e:
             logger.error("Could not load ZerePy agent")
             raise e
-        
-    def _setup_llm_provider(self):           
+
+    def _setup_llm_provider(self):
         # Get first available LLM provider and its model
         llm_providers = self.connection_manager.get_model_providers()
         if not llm_providers:
             raise ValueError("No configured LLM provider found")
         self.model_provider = llm_providers[0]
-        
+
         # Load Twitter username for self-reply detection
         load_dotenv()
         self.username = os.getenv('TWITTER_USERNAME', '').lower()
@@ -91,13 +91,13 @@ class ZerePyAgent:
     def prompt_llm(self, prompt: str, system_prompt: str = None) -> str:
         """Generate text using the configured LLM provider"""
         system_prompt = system_prompt or self._construct_system_prompt()
-        
+
         return self.connection_manager.perform_action(
             connection_name=self.model_provider,
             action_name="generate-text",
             params=[prompt, system_prompt]
         )
-    
+
     def perform_action(self, connection: str, action: str, **kwargs) -> None:
         return self.connection_manager.perform_action(connection, action, **kwargs)
 
@@ -120,11 +120,11 @@ class ZerePyAgent:
 
         try:
             while True:
-                success = False 
+                success = False
                 try:
                     # REPLENISH INPUTS
                     # TODO: Add more inputs to complexify agent behavior
-                    if "timeline_tweets" not in self.state or len(self.state["timeline_tweets"]) == 0:
+                    if "timeline_tweets" not in self.state or self.state["timeline_tweets"] is None or len(self.state["timeline_tweets"]) == 0:
                         logger.info("\n👀 READING TIMELINE")
                         self.state["timeline_tweets"] = self.connection_manager.perform_action(
                             connection_name="twitter",
@@ -167,7 +167,7 @@ class ZerePyAgent:
                             continue
 
                     elif action_name == "reply-to-tweet":
-                        if "timeline_tweets" in self.state and len(self.state["timeline_tweets"]) > 0:
+                        if "timeline_tweets" in self.state and self.state["timeline_tweets"] is not None and len(self.state["timeline_tweets"]) > 0:
                             # Get next tweet from inputs
                             tweet = self.state["timeline_tweets"].pop(0)
                             tweet_id = tweet.get('id')
@@ -208,7 +208,7 @@ class ZerePyAgent:
                                 logger.info("✅ Reply posted successfully!")
 
                     elif action_name == "like-tweet":
-                        if "timeline_tweets" in self.state and len(self.state["timeline_tweets"]) > 0:
+                        if "timeline_tweets" in self.state and self.state["timeline_tweets"] is not None and len(self.state["timeline_tweets"]) > 0:
                             # Get next tweet from inputs
                             tweet = self.state["timeline_tweets"].pop(0)
                             tweet_id = tweet.get('id')
@@ -228,12 +228,12 @@ class ZerePyAgent:
 
                     logger.info(f"\n⏳ Waiting {self.loop_delay} seconds before next loop...")
                     print_h_bar()
-                    time.sleep(self.loop_delay if success else 60) 
+                    time.sleep(self.loop_delay if success else 60)
 
                 except Exception as e:
                     logger.error(f"\n❌ Error in agent loop iteration: {e}")
                     logger.info(f"⏳ Waiting {self.loop_delay} seconds before retrying...")
-                    time.sleep(self.loop_delay)  
+                    time.sleep(self.loop_delay)
 
         except KeyboardInterrupt:
             logger.info("\n🛑 Agent loop stopped by user.")

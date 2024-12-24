@@ -2,6 +2,7 @@ import logging
 from typing import Any, List, Optional, Type, Dict
 from src.connections.base_connection import BaseConnection
 from src.connections.anthropic_connection import AnthropicConnection
+from src.connections.eternalai_connection import EternalAIConnection
 from src.connections.openai_connection import OpenAIConnection
 from src.connections.twitter_connection import TwitterConnection
 
@@ -21,6 +22,8 @@ class ConnectionManager:
             return AnthropicConnection
         elif class_name == "openai":
             return OpenAIConnection
+        elif class_name == "eternalai":
+            return EternalAIConnection
 
         return None
     

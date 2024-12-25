@@ -13,7 +13,6 @@ from src.agent import ZerePyAgent
 from src.helpers import print_h_bar
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
 @dataclass

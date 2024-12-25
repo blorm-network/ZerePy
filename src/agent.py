@@ -7,6 +7,15 @@ from pathlib import Path
 from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
+from src.services.twitter_service import TwitterService
+from src.services.visualization_service import VisualizationService
+from src.services.prompt_service import QuantumPromptGenerator
+from src.services.context_analyzer import ContextAnalyzer
+from src.services.tweet_generator import TweetGenerator
+from typing import Optional
+import asyncio
+from openai import OpenAI
+import tweepy
 
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
@@ -18,6 +27,9 @@ class ZerePyAgent:
             agent_name: str
     ):
         try:        
+            # Initialize OpenAI client
+            self.openai_client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            
             agent_path = Path("agents") / f"{agent_name}.json"
             agent_dict = json.load(open(agent_path, "r"))
 
@@ -52,6 +64,10 @@ class ZerePyAgent:
 
             # Set up empty agent state
             self.state = {}
+            
+            self.context_analyzer = ContextAnalyzer()
+            self.tweet_generator = TweetGenerator()
+            self.visualization_service = VisualizationService(self.openai_client)
             
         except Exception as e:
             logger.error("Could not load ZerePy agent")
@@ -101,140 +117,52 @@ class ZerePyAgent:
     def perform_action(self, connection: str, action: str, **kwargs) -> None:
         return self.connection_manager.perform_action(connection, action, **kwargs)
 
-    def loop(self):
-        """Main agent loop for autonomous behavior"""
-        if not self.is_llm_set:
-            self._setup_llm_provider()
+    async def run_loop(self):
+        """Main agent loop with image generation support"""
+        while True:
+            try:
+                # Get context from timeline/mentions
+                context = await self._get_context()
+                
+                if context:
+                    # Analyze context and generate response
+                    response = await self.tweet_generator.generate_quantum_post(context)
+                    
+                    # Post to Twitter with any generated images
+                    await self.twitter_service.post_with_media(response)
+                    
+                await asyncio.sleep(self.config['capabilities']['post_frequency'])
+                
+            except Exception as e:
+                self.logger.error(f"Error in agent loop: {e}")
+                await asyncio.sleep(300)  # Wait 5 minutes on error
 
-        logger.info("\n🚀 Starting agent loop...")
-        logger.info("Press Ctrl+C at any time to stop the loop.")
-        print_h_bar()
+class DeVitalik:
+    def __init__(self):
+        # Initialize Twitter client
+        auth = tweepy.OAuthHandler(os.getenv('TWITTER_API_KEY'), os.getenv('TWITTER_API_SECRET'))
+        auth.set_access_token(os.getenv('TWITTER_ACCESS_TOKEN'), os.getenv('TWITTER_ACCESS_TOKEN_SECRET'))
+        self.api_client = tweepy.API(auth)
+        
+        self.twitter = TwitterService(self.api_client)
+        self.visualizer = VisualizationService(self.openai_client)
+        self.prompt_gen = QuantumPromptGenerator()
 
-        time.sleep(2)
-        logger.info("Starting loop in 5 seconds...")
-        for i in range(5, 0, -1):
-            logger.info(f"{i}...")
-            time.sleep(1)
+    async def post_quantum_thought(self, context: Optional[str] = None):
+        # Determine mood based on context or random
+        mood = self._analyze_mood(context) if context else random.choice(list(self.moods.keys()))
+        
+        # Generate visualization if needed
+        if random.random() < 0.3:  # 30% chance
+            prompt = self.prompt_gen.generate_prompt(context, mood)
+            image_url = await self.visualizer.generate_contextual_image(prompt)
+            
+            tweet_content = {
+                "text": f"{context}\n\n{random.choice(self.frustration_quotes)}",
+                "media": image_url
+            }
+        else:
+            tweet_content = {"text": context}
 
-        last_tweet_time = 0
-
-        try:
-            while True:
-                success = False 
-                try:
-                    # REPLENISH INPUTS
-                    # TODO: Add more inputs to complexify agent behavior
-                    if "timeline_tweets" not in self.state or len(self.state["timeline_tweets"]) == 0:
-                        logger.info("\n👀 READING TIMELINE")
-                        self.state["timeline_tweets"] = self.connection_manager.perform_action(
-                            connection_name="twitter",
-                            action_name="read-timeline",
-                            params=[]
-                        )
-
-                    # CHOOSE AN ACTION
-                    # TODO: Add agentic action selection
-                    action = random.choices(self.tasks, weights=self.task_weights, k=1)[0]
-                    action_name = action["name"]
-
-                    # PERFORM ACTION
-                    if action_name == "post-tweet":
-                        # Check if it's time to post a new tweet
-                        current_time = time.time()
-                        if current_time - last_tweet_time >= self.tweet_interval:
-                            logger.info("\n📝 GENERATING NEW TWEET")
-                            print_h_bar()
-
-                            prompt = ("Generate an engaging tweet. Don't include any hashtags, links or emojis. Keep it under 280 characters."
-                                    f"The tweets should be pure commentary, do not shill any coins or projects apart from {self.name}. Do not repeat any of the"
-                                    "tweets that were given as example. Avoid the words AI and crypto.")
-                            tweet_text = self.prompt_llm(prompt)
-
-                            if tweet_text:
-                                logger.info("\n🚀 Posting tweet:")
-                                logger.info(f"'{tweet_text}'")
-                                self.connection_manager.perform_action(
-                                    connection_name="twitter",
-                                    action_name="post-tweet",
-                                    params=[tweet_text]
-                                )
-                                last_tweet_time = current_time
-                                success = True
-                                logger.info("\n✅ Tweet posted successfully!")
-                        else:
-                            logger.info("\n👀 Delaying post until tweet interval elapses...")
-                            print_h_bar()
-                            continue
-
-                    elif action_name == "reply-to-tweet":
-                        if "timeline_tweets" in self.state and len(self.state["timeline_tweets"]) > 0:
-                            # Get next tweet from inputs
-                            tweet = self.state["timeline_tweets"].pop(0)
-                            tweet_id = tweet.get('id')
-                            if not tweet_id:
-                                continue
-
-                            # Check if it's our own tweet using username
-                            is_own_tweet = tweet.get('author_username', '').lower() == self.username
-                            if is_own_tweet:
-                                # pick one of the replies to reply to
-                                replies = self.connection_manager.perform_action(
-                                    connection_name="twitter",
-                                    action_name="get-tweet-replies",
-                                    params=[tweet.get('author_id')]
-                                )
-                                if replies:
-                                    self.state["timeline_tweets"].extend(replies[:self.own_tweet_replies_count])
-                                continue
-
-                            logger.info(f"\n💬 GENERATING REPLY to: {tweet.get('text', '')[:50]}...")
-
-                            # Customize prompt based on whether it's a self-reply
-                            base_prompt = (f"Generate a friendly, engaging reply to this tweet: {tweet.get('text')}. Keep it under 280 characters. Don't include any usernames, hashtags, links or emojis. "
-                                f"The tweets should be pure commentary, do not shill any coins or projects apart from {self.name}. Do not repeat any of the"
-                                "tweets that were given as example. Avoid the words AI and crypto.")
-
-                            system_prompt = self._construct_system_prompt()
-                            reply_text = self.prompt_llm(prompt=base_prompt, system_prompt=system_prompt)
-
-                            if reply_text:
-                                logger.info(f"\n🚀 Posting reply: '{reply_text}'")
-                                self.connection_manager.perform_action(
-                                    connection_name="twitter",
-                                    action_name="reply-to-tweet",
-                                    params=[tweet_id, reply_text]
-                                )
-                                success = True
-                                logger.info("✅ Reply posted successfully!")
-
-                    elif action_name == "like-tweet":
-                        if "timeline_tweets" in self.state and len(self.state["timeline_tweets"]) > 0:
-                            # Get next tweet from inputs
-                            tweet = self.state["timeline_tweets"].pop(0)
-                            tweet_id = tweet.get('id')
-                            if not tweet_id:
-                                continue
-
-                            logger.info(f"\n👍 LIKING TWEET: {tweet.get('text', '')[:50]}...")
-
-                            self.connection_manager.perform_action(
-                                connection_name="twitter",
-                                action_name="like-tweet",
-                                params=[tweet_id]
-                            )
-                            success = True
-                            logger.info("✅ Tweet liked successfully!")
-
-
-                    logger.info(f"\n⏳ Waiting {self.loop_delay} seconds before next loop...")
-                    print_h_bar()
-                    time.sleep(self.loop_delay if success else 60) 
-
-                except Exception as e:
-                    logger.error(f"\n❌ Error in agent loop iteration: {e}")
-                    logger.info(f"⏳ Waiting {self.loop_delay} seconds before retrying...")
-                    time.sleep(self.loop_delay)  
-
-        except KeyboardInterrupt:
-            logger.info("\n🛑 Agent loop stopped by user.")
-            return
+        # Post to Twitter
+        await self.twitter.post_with_media(tweet_content)

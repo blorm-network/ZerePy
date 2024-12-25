@@ -1,0 +1,2 @@
+requests>=2.31.0
+tweepy>=4.14.0 

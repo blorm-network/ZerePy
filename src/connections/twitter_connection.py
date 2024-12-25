@@ -370,7 +370,7 @@ class TwitterConnection(BaseConnection):
         if count is None:
             count = self.config["timeline_read_count"]
             
-        logger.debug(f"Reading timeline, count: {count}")
+        logger.info(f"Reading {count} tweets from timeline")
         credentials = self._get_credentials()
 
         params = {
@@ -435,12 +435,13 @@ class TwitterConnection(BaseConnection):
 
     def post_tweet(self, message: str, **kwargs) -> dict:
         """Post a new tweet"""
-        logger.debug("Posting new tweet")
+        logger.info("Initiating tweet post")
         self._validate_tweet_text(message)
 
+        logger.info(f"Posting tweet: {message[:50]}...")
         response = self._make_request('post', 'tweets', json={'text': message})
 
-        logger.info("Tweet posted successfully")
+        logger.info(f"Tweet posted successfully (id: {response.get('data', {}).get('id', 'unknown')})")
         return response
 
     def reply_to_tweet(self, tweet_id: str, message: str, **kwargs) -> dict:
@@ -488,3 +489,6 @@ class TwitterConnection(BaseConnection):
         
         logger.info(f"Retrieved {len(replies)} replies")
         return replies
+
+    def handle_error(self, error):
+        logger.error(f"Twitter operation failed: {str(error)}")

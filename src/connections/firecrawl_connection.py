@@ -120,8 +120,8 @@ class FirecrawlConnection(BaseConnection):
         try:
             client = self._get_client()
             response = client.scrape_url(url,  params={'formats': ['markdown']})  
-            logger.info(f"Successfully scraped page : {url}")         
-            return response
+            logger.info(f"Successfully scraped page : {url}")    
+            return response['markdown']     
         except Exception as e:
             raise FirecrawlAPIError(f"Scraping failed: {e}")
         

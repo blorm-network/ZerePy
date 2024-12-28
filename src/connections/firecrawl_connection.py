@@ -84,7 +84,6 @@ class FirecrawlConnection(BaseConnection):
 
             set_key('.env', 'FIRECRAWL_API_KEY', api_key)
             
-            # Validate the API key by trying to list models
             client = FirecrawlApp(api_key=api_key)
       
             print("\n✅ Firecrawl API configuration successfully saved!")
@@ -123,7 +122,7 @@ class FirecrawlConnection(BaseConnection):
             logger.info(f"Successfully scraped page : {url}")    
             return response['markdown']     
         except Exception as e:
-            raise FirecrawlAPIError(f"Scraping failed: {e}")
+            raise FirecrawlAPIError(f"Scraping {url} failed: {e}")
         
           
     def perform_action(self, action_name: str, kwargs) -> Any:

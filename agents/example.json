@@ -33,7 +33,7 @@
     },
     {
       "name": "firecrawl",
-      "enabled": true
+      "enabled": false
     }
   ],
   "tasks": [

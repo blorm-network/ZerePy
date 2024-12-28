@@ -113,7 +113,7 @@ class FirecrawlConnection(BaseConnection):
 
     def scrape_page(self, url: str) -> str:
         """Scrape a page for text data"""
-        if not self.config.get("enabled",True):
+        if not self.config["enabled"]:
             #logger.warning("Firecrawl scraping is disabled in the configuration.")
             return "" 
         try:

@@ -5,6 +5,7 @@ from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
 from src.connections.openai_connection import OpenAIConnection
 from src.connections.twitter_connection import TwitterConnection
+from src.connections.firecrawl_connection import FirecrawlConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -24,6 +25,8 @@ class ConnectionManager:
             return OpenAIConnection
         elif class_name == "eternalai":
             return EternalAIConnection
+        elif class_name == "firecrawl":
+            return FirecrawlConnection
 
         return None
     

@@ -36,5 +36,7 @@
     {"name": "post-tweet", "weight": 1},
     {"name": "reply-to-tweet", "weight": 1},
     {"name": "like-tweet", "weight": 1}
-  ]
+  ],
+  "tweet-prompt": "",
+  "reply-prompt": ""
 }

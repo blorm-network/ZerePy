@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
 
-REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
+REQUIRED_FIELDS = ["name", "language", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
 logger = logging.getLogger("agent")
 
@@ -147,7 +147,7 @@ class ZerePyAgent:
 
                             prompt = ("Generate an engaging tweet. Don't include any hashtags, links or emojis. Keep it under 280 characters."
                                     f"The tweets should be pure commentary, do not shill any coins or projects apart from {self.name}. Do not repeat any of the"
-                                    "tweets that were given as example. Avoid the words AI and crypto.")
+                                    "tweets that were given as example. Avoid the words AI and crypto. Write the tweet in {self.language}.")
                             tweet_text = self.prompt_llm(prompt)
 
                             if tweet_text:
@@ -192,7 +192,7 @@ class ZerePyAgent:
                             # Customize prompt based on whether it's a self-reply
                             base_prompt = (f"Generate a friendly, engaging reply to this tweet: {tweet.get('text')}. Keep it under 280 characters. Don't include any usernames, hashtags, links or emojis. "
                                 f"The tweets should be pure commentary, do not shill any coins or projects apart from {self.name}. Do not repeat any of the"
-                                "tweets that were given as example. Avoid the words AI and crypto.")
+                                "tweets that were given as example. Avoid the words AI and crypto. Write the reply in {self.language}.")
 
                             system_prompt = self._construct_system_prompt()
                             reply_text = self.prompt_llm(prompt=base_prompt, system_prompt=system_prompt)

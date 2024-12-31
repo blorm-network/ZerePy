@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 from requests_oauthlib import OAuth1Session
 from dotenv import set_key, load_dotenv
 import tweepy
@@ -177,20 +177,22 @@ class TwitterConnection(BaseConnection):
 
         return self._oauth_session
 
-    def _get_authenticated_user_id(self) -> str:
-        """Get the authenticated user's ID using the users/me endpoint"""
-        logger.debug("Getting authenticated user ID")
+    def _get_authenticated_user_info(self) -> Tuple[str, str]:
+        """Get the authenticated user's ID and username using the users/me endpoint"""
+        logger.debug("Getting authenticated user info")
         try:
             response = self._make_request('get',
-                                          'users/me',
-                                          params={'user.fields': 'id'})
+                                        'users/me',
+                                        params={'user.fields': 'id,username'})
             user_id = response['data']['id']
-            logger.debug(f"Retrieved user ID: {user_id}")
-            return user_id
+            username = response['data']['username']
+            logger.debug(f"Retrieved user ID: {user_id}, username: {username}")
+            
+            return user_id, username
         except Exception as e:
-            logger.error(f"Failed to get authenticated user ID: {str(e)}")
+            logger.error(f"Failed to get authenticated user info: {str(e)}")
             raise TwitterConfigurationError(
-                "Could not retrieve user ID") from e
+                "Could not retrieve user information") from e
 
     def _validate_tweet_text(self, text: str, context: str = "Tweet") -> None:
         """Validate tweet text meets Twitter requirements"""
@@ -288,12 +290,14 @@ class TwitterConnection(BaseConnection):
                 resource_owner_secret=oauth_tokens.get('oauth_token_secret'))
 
             self._oauth_session = temp_oauth
-            user_id = self._get_authenticated_user_id()
+            user_id, username = self._get_authenticated_user_info()
 
             # Save to .env
             env_vars = {
                 'TWITTER_USER_ID':
                 user_id,
+                'TWITTER_USERNAME':
+                username,
                 'TWITTER_CONSUMER_KEY':
                 credentials['consumer_key'],
                 'TWITTER_CONSUMER_SECRET':

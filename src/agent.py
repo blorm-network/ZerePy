@@ -117,11 +117,37 @@ class ZerePyAgent:
             time.sleep(1)
 
         last_tweet_time = 0
+        rate_limit_wait = 900  # 15 minutes default wait for rate limits
+        self.tweet_limit_reset = None  # Track when we can tweet again
+        self.timeline_limit_reset = None  # Track timeline read limits
 
         try:
             while True:
                 success = False
                 try:
+                    current_time = time.time()
+                    
+                    # Show current status
+                    logger.info(f"\n{self._get_agent_status()}")
+                    print_h_bar()
+                    
+                    # Check tweet limit cooldown
+                    if self.tweet_limit_reset and current_time < self.tweet_limit_reset:
+                        wait_seconds = self.tweet_limit_reset - current_time
+                        hours = int(wait_seconds / 3600)
+                        minutes = int((wait_seconds % 3600) / 60)
+                        reset_time = self._format_time(self.tweet_limit_reset)
+                        logger.info(f"\n⏳ In likes-only mode until {reset_time} ({hours}h {minutes}m)")
+
+                    # Check timeline read limit
+                    if self.timeline_limit_reset and current_time < self.timeline_limit_reset:
+                        wait_seconds = self.timeline_limit_reset - current_time
+                        minutes = int(wait_seconds / 60)
+                        reset_time = self._format_time(self.timeline_limit_reset)
+                        logger.info(f"\n⏳ Timeline rate limited until {reset_time} ({minutes}m)")
+                        time.sleep(min(wait_seconds, self.loop_delay))
+                        continue
+
                     # REPLENISH INPUTS
                     # TODO: Add more inputs to complexify agent behavior
                     if "timeline_tweets" not in self.state or self.state["timeline_tweets"] is None or len(self.state["timeline_tweets"]) == 0:
@@ -238,3 +264,105 @@ class ZerePyAgent:
         except KeyboardInterrupt:
             logger.info("\n🛑 Agent loop stopped by user.")
             return
+
+    def _get_context_from_timeline(self) -> str:
+        """Extract relevant context and trends from timeline tweets"""
+        if not self.state.get("timeline_tweets"):
+            return ""
+        
+        # Get more context from recent tweets
+        recent_tweets = self.state["timeline_tweets"][:10]  # Analyze last 10 tweets
+        
+        context = "Current conversation context:\n"
+        
+        # Define relevant topic categories
+        topic_categories = {
+            'defi': ['defi', 'web3', 'blockchain', 'crypto', 'ethereum', 'trading', 'finance'],
+            'ai_agents': ['ai', 'agent', 'llm', 'gpt', 'autonomous', 'bot', 'automation'],
+            'zerepy': ['zerepy', 'agent', 'developer', 'ecosystem', 'platform']
+        }
+        
+        # Track topics by category
+        category_mentions = {
+            'defi': {},
+            'ai_agents': {},
+            'zerepy': {}
+        }
+        
+        # Extract topics and analyze context
+        active_discussions = []
+        for tweet in recent_tweets:
+            text = tweet.get('text', '').lower()
+            if not text:
+                continue
+            
+            # Track topics by category
+            for category, keywords in topic_categories.items():
+                for keyword in keywords:
+                    if keyword in text:
+                        words = text.split()
+                        # Find contextual phrases around keyword
+                        for i, word in enumerate(words):
+                            if keyword in word:
+                                start = max(0, i-2)
+                                end = min(len(words), i+3)
+                                phrase = ' '.join(words[start:end])
+                                if phrase not in category_mentions[category]:
+                                    category_mentions[category][phrase] = 0
+                                category_mentions[category][phrase] += 1
+            
+            # Add full tweet for immediate context
+            active_discussions.append(text)
+        
+        # Build context summary
+        context += "\nActive Discussions:\n"
+        for discussion in active_discussions[:3]:
+            context += f"- {discussion}\n"
+        
+        # Add trending topics by category
+        context += "\nTrending Topics:\n"
+        for category, mentions in category_mentions.items():
+            if mentions:
+                trending = sorted(mentions.items(), key=lambda x: x[1], reverse=True)[:2]
+                context += f"\n{category.upper()} Trends:\n"
+                for topic, count in trending:
+                    context += f"- {topic} (mentioned {count} times)\n"
+        
+        return context
+
+    def _format_time(self, timestamp: float = None) -> str:
+        """Format timestamp into human readable format"""
+        if timestamp is None:
+            timestamp = time.time()
+        return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp))
+
+    def _get_agent_status(self) -> str:
+        """Get current agent status for display"""
+        current_time = time.time()
+        status_parts = []
+        
+        # Add timestamp
+        status_parts.append(f"🕒 Current time: {self._format_time()}")
+        
+        # Add tweet limit status
+        if hasattr(self, 'tweet_limit_reset') and self.tweet_limit_reset and current_time < self.tweet_limit_reset:
+            wait_seconds = self.tweet_limit_reset - current_time
+            hours = int(wait_seconds / 3600)
+            minutes = int((wait_seconds % 3600) / 60)
+            status_parts.append(f"🔄 Tweet Mode: LIKES ONLY (resumes in {hours}h {minutes}m)")
+        else:
+            status_parts.append("🔄 Tweet Mode: ACTIVE")
+        
+        # Add timeline status
+        if hasattr(self, 'timeline_limit_reset') and self.timeline_limit_reset and current_time < self.timeline_limit_reset:
+            wait_seconds = self.timeline_limit_reset - current_time
+            minutes = int(wait_seconds / 60)
+            status_parts.append(f"📚 Timeline: PAUSED (resumes in {minutes}m)")
+        else:
+            status_parts.append("📚 Timeline: ACTIVE")
+        
+        # Add queue status
+        tweet_count = len(self.state.get("timeline_tweets", []))
+        status_parts.append(f"📋 Queue: {tweet_count} tweets")
+        
+        return " | ".join(status_parts)

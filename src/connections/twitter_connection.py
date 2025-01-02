@@ -53,7 +53,7 @@ class TwitterConnection(BaseConnection):
                 name="get-latest-tweets",
                 parameters=[
                     ActionParameter("username", True, str, "Twitter username to get tweets from"),
-                    ActionParameter("count", True, int, "Number of tweets to retrieve")
+                    ActionParameter("count", False, int, "Number of tweets to retrieve")
                 ],
                 description="Get the latest tweets from a user"
             ),
@@ -426,16 +426,17 @@ class TwitterConnection(BaseConnection):
         params = {
             "tweet.fields": "created_at,text",
             "max_results": min(count, 100),
-            "exclude": "retweets,replies"
+            "query": f"from:{username} -is:retweet -is:reply"
         }
 
         response = self._make_request('get',
-                                      f"users/{credentials['TWITTER_USER_ID']}/tweets",
+                                      f"tweets/search/recent",
                                       params=params)
 
         tweets = response.get("data", [])
         logger.debug(f"Retrieved {len(tweets)} tweets")
         return tweets
+
 
     def post_tweet(self, message: str, **kwargs) -> dict:
         """Post a new tweet"""

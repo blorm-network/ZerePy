@@ -29,14 +29,15 @@ class ZerePyAgent:
             self.bio = agent_dict["bio"]
             self.traits = agent_dict["traits"]
             self.examples = agent_dict["examples"]
+            self.example_accounts = agent_dict["example_accounts"]
             self.loop_delay = agent_dict["loop_delay"]
             self.connection_manager = ConnectionManager(agent_dict["config"])
 
             # Extract Twitter config if Twitter tasks exist
-            has_twitter_tasks = any(task["name"].startswith("tweet") or task["name"].startswith("like-tweet") 
-                                  for task in agent_dict.get("tasks", []))
+            has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
             
             twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
+            
             if has_twitter_tasks and twitter_config:
                 self.tweet_interval = twitter_config.get("tweet_interval", 900)
                 self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
@@ -87,9 +88,19 @@ class ZerePyAgent:
                 prompt_parts.append("\nYour key traits are:")
                 prompt_parts.extend(f"- {trait}" for trait in self.traits)
 
-            if self.examples:
+            if self.examples or self.example_accounts:
                 prompt_parts.append("\nHere are some examples of your style (Please avoid repeating any of these):")
-                prompt_parts.extend(f"- {example}" for example in self.examples)
+                if self.examples:
+                    prompt_parts.extend(f"- {example}" for example in self.examples)
+
+                if self.example_accounts:
+                    for example_account in self.example_accounts:
+                        tweets = self.connection_manager.perform_action(
+                            connection_name="twitter",
+                            action_name="get-latest-tweets",
+                            params=[example_account]
+                        )
+                        prompt_parts.extend(f"- {tweet['text']}" for tweet in tweets)
 
             self._system_prompt = "\n".join(prompt_parts)
 

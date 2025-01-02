@@ -1,8 +1,8 @@
-# ZerePy
+# ZerePy - BASE.
 
 ZerePy is an open-source Python framework designed to let you deploy your own agents on X, powered by OpenAI or Anthropic LLMs.
 
-ZerePy is built from a modularized version of the Zerebro backend. With ZerePy, you can launch your own agent with 
+Mino is built from a modularized version of the Zerebro backend. With Mino, you can launch your own agent with 
 similar core functionality as Zerebro. For creative outputs, you'll need to fine-tune your own model.
 
 ## Features
@@ -13,9 +13,9 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 
 ## Quickstart
 
-The quickest way to start using ZerePy is to use our Replit template:
+The quickest way to start using Mino is to use our Replit template:
 
-https://replit.com/@blormdev/ZerePy?v=1
+https://replit.com/@blormdev/Mino?v=1
 
 1. Fork the template (you will need you own Replit account)
 2. Click the run button on top
@@ -42,12 +42,12 @@ Follow the steps here to use the official installation: https://python-poetry.or
 
 2. Clone the repository:
 ```bash
-git clone https://github.com/blorm-network/ZerePy.git
+git clone https://github.com/blorm-network/Mino.git
 ```
 
-3. Go to the `zerepy` directory:
+3. Go to the `Mino` directory:
 ```bash
-cd zerepy
+cd Mino
 ```
 
 4. Install dependencies:
@@ -97,7 +97,7 @@ Create a new JSON file in the `agents` directory following this structure:
 {
  "name": "ExampleAgent",
  "bio": [
-   "You are ExampleAgent, the example agent created to showcase the capabilities of ZerePy.",
+   "You are ExampleAgent, the example agent created to showcase the capabilities of Mino.",
    "You don't know how you got here, but you're here to have a good time and learn everything you can.",
    "You are naturally curious, and ask a lot of questions."
   ],
@@ -138,7 +138,7 @@ Create a new JSON file in the `agents` directory following this structure:
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=blorm-network/ZerePy&type=Date)](https://star-history.com/#blorm-network/ZerePy&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=blorm-network/Mino&type=Date)](https://star-history.com/#blorm-network/Mino&Date)
 
 ---
 Made with ♥ @Blorm.xyz

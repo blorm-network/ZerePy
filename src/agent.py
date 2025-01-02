@@ -34,12 +34,12 @@ class ZerePyAgent:
 
             # Extract Twitter config
             twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
-            if not twitter_config:
-                raise KeyError("Twitter configuration is required")
-
-            # TODO: These should probably live in the related task parameters
-            self.tweet_interval = twitter_config.get("tweet_interval", 900)
-            self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
+            if twitter_config:
+                # TODO: These should probably live in the related task parameters
+                self.tweet_interval = twitter_config.get("tweet_interval", 900)
+                self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
+            else:
+                logger.info("No Twitter configuration found. Skipping Twitter integration.")
 
             self.is_llm_set = False
 
@@ -68,7 +68,7 @@ class ZerePyAgent:
         load_dotenv()
         self.username = os.getenv('TWITTER_USERNAME', '').lower()
         if not self.username:
-                raise ValueError("Twitter username is required")
+            logger.info("Twitter username not configured. Skipping Twitter-specific functionality.")
 
     def _construct_system_prompt(self) -> str:
         """Construct the system prompt from agent configuration"""

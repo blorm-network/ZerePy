@@ -138,7 +138,7 @@ class EternalAIConnection(BaseConnection):
                 logger.debug(f"Configuration check failed: {e}")
             return False
 
-    def generate_text(self, prompt: str, system_prompt: str, model: str = None, **kwargs) -> str:
+    def generate_text(self, prompt: str, system_prompt: str, model: str = None, chain_id: str = None, **kwargs) -> str:
         """Generate text using EternalAI models"""
         try:
             client = self._get_client()
@@ -147,14 +147,23 @@ class EternalAIConnection(BaseConnection):
             if not model:
                 model = self.config["model"]
             print("model", model)
+            if not chain_id:
+                chain_id = self.config["chain_id"]
+            if not chain_id or chain_id == "":
+                chain_id = "45762"
+            print("chain_id", chain_id)
+
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt},
                 ],
+                extra_body={"chain_id": chain_id}
             )
-
+            if completion.choices is None:
+                raise EternalAIAPIError(f"Text generation failed: completion.choices is None")
+            print("response data:", completion)
             return completion.choices[0].message.content
 
         except Exception as e:

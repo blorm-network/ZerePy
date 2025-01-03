@@ -25,7 +25,8 @@
     },
     {
       "name": "eternalai",
-      "model": "unsloth/Llama-3.3-70B-Instruct-bnb-4bit"
+      "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
+      "chain_id": "45762"
     }
   ],
   "tasks": [

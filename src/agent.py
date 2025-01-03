@@ -7,6 +7,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
+from datetime import datetime
+
 
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
@@ -142,7 +144,29 @@ class ZerePyAgent:
 
                     # CHOOSE AN ACTION
                     # TODO: Add agentic action selection
-                    action = random.choices(self.tasks, weights=self.task_weights, k=1)[0]
+                    
+                    current_hour = datetime.now().hour
+                    
+                    # Reset weights to original values and ensure no negative weights
+                    task_weights = [max(0.01, weight) for weight in self.task_weights.copy()]
+
+                    # Reduce tweet frequency during night hours (1 AM - 5 AM)
+                    if 1 <= current_hour <= 5:
+                        task_weights = [
+                            weight * 0.4 if task["name"] == "post-tweet"
+                            else weight
+                            for weight, task in zip(task_weights, self.tasks)
+                        ]
+                        
+                    # Increase engagement frequency during day hours (8 AM - 8 PM) (peak hours?🤔)
+                    if 8 <= current_hour <= 20:
+                        task_weights = [
+                            weight * 1.5 if task["name"] in ("reply-to-tweet", "like-tweet")
+                            else weight
+                            for weight, task in zip(task_weights, self.tasks)
+                        ]
+                        
+                    action = random.choices(self.tasks, weights=task_weights, k=1)[0]
                     action_name = action["name"]
 
                     # PERFORM ACTION

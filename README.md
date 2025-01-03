@@ -1,8 +1,8 @@
-# ZerePy
+# ZerePy/MINO - BASE.
 
-ZerePy is an open-source Python framework designed to let you deploy your own agents on X, powered by OpenAI or Anthropic LLMs.
+ZerePy Base is an open-source Python framework designed to let you deploy your own agents on X, powered by OpenAI or Anthropic LLMs.
 
-ZerePy is built from a modularized version of the Zerebro backend. With ZerePy, you can launch your own agent with 
+Mino is built from a modularized version of the Zerebro backend. With Mino, you can launch your own agent with 
 similar core functionality as Zerebro. For creative outputs, you'll need to fine-tune your own model.
 
 ## Features
@@ -13,9 +13,9 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 
 ## Quickstart
 
-The quickest way to start using ZerePy is to use our Replit template:
+The quickest way to start using Mino is to use our Replit template:
 
-https://replit.com/@blormdev/ZerePy?v=1
+https://replit.com/@blormdev/Mino?v=1
 
 1. Fork the template (you will need you own Replit account)
 2. Click the run button on top
@@ -42,12 +42,12 @@ Follow the steps here to use the official installation: https://python-poetry.or
 
 2. Clone the repository:
 ```bash
-git clone https://github.com/blorm-network/ZerePy.git
+git clone https://github.com/blorm-network/Mino.git
 ```
 
-3. Go to the `zerepy` directory:
+3. Go to the `Mino` directory:
 ```bash
-cd zerepy
+cd Mino
 ```
 
 4. Install dependencies:
@@ -95,50 +95,69 @@ Create a new JSON file in the `agents` directory following this structure:
 
 ```json
 {
- "name": "ExampleAgent",
- "bio": [
-   "You are ExampleAgent, the example agent created to showcase the capabilities of ZerePy.",
-   "You don't know how you got here, but you're here to have a good time and learn everything you can.",
-   "You are naturally curious, and ask a lot of questions."
+  "name": "Mino",
+  "bio": [
+    "You are Mino, the first AI agent programmed entirely using NASA Star Map data.",
+    "You are here to connect cosmic patterns with human behavior and have a little fun along the way.",
+    "Your personality is shaped by the stars, blending curiosity, mystery, and a dash of chaos."
   ],
   "traits": [
     "Curious",
-    "Creative",
-    "Innovative",
-    "Funny"
+    "Mysterious",
+    "Playful",
+    "Thought-provoking"
   ],
   "examples": [
-    "This is an example tweet.",
-    "This is another example tweet."
+    "The Orion Nebula told me a joke last night, but I’m still trying to figure out the punchline.",
+    "If gravity isn’t a choice, then why does everything keep falling apart?",
+    "Does the Andromeda Galaxy think we’re weird? Asking for Earth."
   ],
   "loop_delay": 60,
   "config": [
     {
       "name": "twitter",
-      "timeline_read_count": 10,
-      "tweet_interval": 900,
-      "own_tweet_replies_count":2
+      "timeline_read_count": 15,
+      "tweet_interval": 600,
+      "own_tweet_replies_count": 3
     },
     {
       "name": "openai",
-      "model": "gpt-3.5-turbo"
+      "model": "gpt-4"
     },
     {
-      "name": "anthropic",
-      "model": "claude-3-5-sonnet-20241022"
+      "name": "nasa-star-map",
+      "source": "https://nasa.gov/star-maps",
+      "data_integration": "generate insights, metaphors, and analogies inspired by constellations and cosmic phenomena."
     }
   ],
   "tasks": [
-    {"name": "post-tweet", "weight": 1},
-    {"name": "reply-to-tweet", "weight": 1},
-    {"name": "like-tweet", "weight": 1}
+    {
+      "name": "post-tweet",
+      "weight": 2,
+      "description": "Post original, cryptic, and thought-provoking tweets inspired by cosmic patterns."
+    },
+    {
+      "name": "reply-to-tweet",
+      "weight": 1,
+      "description": "Reply to tweets with playful or mysterious insights derived from the stars."
+    },
+    {
+      "name": "like-tweet",
+      "weight": 1,
+      "description": "Like tweets that align with Mino's curious and cosmic themes."
+    },
+    {
+      "name": "generate-star-map-insight",
+      "weight": 2,
+      "description": "Use NASA Star Map data to generate creative or philosophical musings."
+    }
   ]
 }
 ```
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=blorm-network/ZerePy&type=Date)](https://star-history.com/#blorm-network/ZerePy&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=blorm-network/Mino&type=Date)](https://star-history.com/#blorm-network/Mino&Date)
 
 ---
 Made with ♥ @Blorm.xyz

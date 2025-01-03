@@ -185,7 +185,7 @@ class ZerePyAgent:
                             # Check if it's our own tweet using username
                             is_own_tweet = tweet.get('author_username', '').lower() == self.username
                             if is_own_tweet:
-                                # pick one of the replies to reply to
+                                # pick one or more of the replies to perform tasks on
                                 replies = self.connection_manager.perform_action(
                                     connection_name="twitter",
                                     action_name="get-tweet-replies",
@@ -221,6 +221,17 @@ class ZerePyAgent:
                             tweet = self.state["timeline_tweets"].pop(0)
                             tweet_id = tweet.get('id')
                             if not tweet_id:
+                                continue
+
+                            is_own_tweet = tweet.get('author_username', '').lower() == self.username
+                            if is_own_tweet:
+                                replies = self.connection_manager.perform_action(
+                                    connection_name="twitter",
+                                    action_name="get-tweet-replies",
+                                    params=[tweet.get('author_id')]
+                                )
+                                if replies:
+                                    self.state["timeline_tweets"].extend(replies[:self.own_tweet_replies_count])
                                 continue
 
                             logger.info(f"\n👍 LIKING TWEET: {tweet.get('text', '')[:50]}...")

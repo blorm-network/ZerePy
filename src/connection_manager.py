@@ -11,6 +11,15 @@ from src.connections.echochambers_connection import EchochambersConnection
 logger = logging.getLogger("connection_manager")
 
 class ConnectionManager:
+    CONNECTION_TYPES = {
+        "twitter": TwitterConnection,
+        "anthropic": AnthropicConnection,
+        "openai": OpenAIConnection,
+        "farcaster": FarcasterConnection,
+        "eternalai": EternalAIConnection,
+        "echochambers": EchochambersConnection
+    }
+
     def __init__(self, agent_config):
         self.connections : Dict[str, BaseConnection] = {}
         for config in agent_config:
@@ -18,20 +27,10 @@ class ConnectionManager:
     
     @staticmethod
     def _class_name_to_type(class_name: str) -> Type[BaseConnection]:
-        if class_name == "twitter":
-            return TwitterConnection
-        elif class_name == "anthropic":
-            return AnthropicConnection
-        elif class_name == "openai":
-            return OpenAIConnection
-        elif class_name == "farcaster":
-            return FarcasterConnection
-        elif class_name == "eternalai":
-            return EternalAIConnection
-        elif class_name == "echochambers":
-            return EchochambersConnection
-
-        return None
+        connection_type = ConnectionManager.CONNECTION_TYPES.get(class_name)
+        if not connection_type:
+            logger.warning(f"Unknown connection type: {class_name}")
+        return connection_type
     
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:
         """

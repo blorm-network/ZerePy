@@ -14,6 +14,7 @@ agents/*.json
 # Include example agent and general config
 !agents/example.json
 !agents/general.json
+!agents/hyperliquid-example.json
 
 # macOS
 .DS_Store

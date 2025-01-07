@@ -8,6 +8,7 @@ from src.connections.twitter_connection import TwitterConnection
 from src.connections.farcaster_connection import FarcasterConnection
 from src.connections.ollama_connection import OllamaConnection
 from src.connections.echochambers_connection import EchochambersConnection
+from src.connections.hyperliquid_connection import HyperliquidConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -33,6 +34,8 @@ class ConnectionManager:
             return OllamaConnection
         elif class_name == "echochambers":
             return EchochambersConnection
+        elif class_name == "hyperliquid":
+            return HyperliquidConnection
 
         return None
     

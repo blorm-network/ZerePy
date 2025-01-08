@@ -176,7 +176,30 @@ class ZerePyCLI:
                 aliases=['connections', 'ls-connections']
             )
         )
-        
+
+        #get info on current llm provider and model
+        self._register_command(
+            Command(
+                name="get-provider-info",
+                description="Shows information about the current LLM provider and model.",
+                tips=["Run this command to see which LLM provider and model is currently being used"],
+                handler=self.get_provider_info,
+                aliases=['provider-info', 'provider']
+            )
+        )
+
+        # Change provider command - note explicit parameter format in tips
+        self._register_command(
+            Command(
+                name="change-llm-provider", 
+                description="Changes the LLM provider being used.",
+                tips=["Format: change-llm-provider {provider_name}",
+                    "Use 'list-connections' to see available providers"],
+                handler=self.change_provider,
+                aliases=['set-provider']
+            )
+        )
+                
         ################## MISC ################## 
         # Exit command
         self._register_command(
@@ -484,6 +507,33 @@ class ZerePyCLI:
             self.agent.connection_manager.list_connections()
         else:
             logging.info("Please load an agent to see the list of supported actions")
+
+    def get_provider_info(self, input_list: List[str]) -> None:
+        """Display current LLM provider and model information"""
+        if not self.agent:
+            logger.info("No agent is currently loaded")
+            return
+            
+        info = self.agent.get_current_provider_info()
+        logger.info(f"\nCurrent LLM Provider: {info['provider']}")
+        logger.info(f"Using Model: {info['model']}")
+
+    def change_provider(self, input_list: List[str]) -> None:
+        """Change the current LLM provider"""
+        if not self.agent:
+            logger.info("No agent is currently loaded")
+            return
+            
+        if len(input_list) != 2:  # Command name + exactly one argument
+            logger.info("Please specify exactly one provider name")
+            logger.info("Format: change-llm-provider {provider_name}")
+            return
+            
+        provider = input_list[1]
+        if self.agent.change_llm_provider(provider):
+            logger.info(f"\n✅ Successfully changed provider to {provider}")
+        else:
+            logger.info("\nUse 'list-connections' to see available providers")
 
     def chat_session(self, input_list: List[str]) -> None:
         """Handle chat command"""

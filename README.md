@@ -162,7 +162,8 @@ Create a new JSON file in the `agents` directory following this structure:
   ],
   "traits": ["Curious", "Creative", "Innovative", "Funny"],
   "examples": ["This is an example tweet.", "This is another example tweet."],
-  "example_accounts" : ["X_username_to_use_for_tweet_examples"]
+  "example_accounts": ["X_username_to_use_for_tweet_examples"],
+  "default_provider": "hyperbolic", // optional, defaults to openai
   "loop_delay": 900,
   "config": [
     {
@@ -224,6 +225,8 @@ Use `help` in the CLI to see all available commands. Key commands include:
 - `list-actions`: Show available actions for a connection
 - `configure-connection`: Set up a new connection
 - `chat`: Start interactive chat with agent
+- `get-provider-info`: Show current LLM provider and model
+- `change-llm-provider`: Change the active LLM provider
 
 ## Star History
 

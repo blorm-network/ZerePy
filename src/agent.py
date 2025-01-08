@@ -9,7 +9,7 @@ from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
 from src.action_handler import execute_action
 import src.actions.twitter_actions  
-import src.actions.echochamber_actions  
+import src.actions.echochamber_actions 
 from datetime import datetime
 
 
@@ -39,6 +39,9 @@ class ZerePyAgent:
             self.connection_manager = ConnectionManager(agent_dict["config"])
             self.use_time_based_weights = agent_dict["use_time_based_weights"]
             self.time_based_multipliers = agent_dict["time_based_multipliers"]
+            self.default_provider = agent_dict.get("default_provider", "openai")
+            self.config = agent_dict["config"]  # Store the config
+            self.connection_manager = ConnectionManager(self.config)
 
             has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
             
@@ -62,7 +65,7 @@ class ZerePyAgent:
             # Extract loop tasks
             self.tasks = agent_dict.get("tasks", [])
             self.task_weights = [task.get("weight", 0) for task in self.tasks]
-            self.logger = logging.getLogger("agent")
+            logger = logging.getLogger("agent")
 
             # Set up empty agent state
             self.state = {}
@@ -72,11 +75,34 @@ class ZerePyAgent:
             raise e
 
     def _setup_llm_provider(self):
-        # Get first available LLM provider and its model
+        """Set up the LLM provider, using default if none specified"""
+        # Get available LLM providers that have models configured
         llm_providers = self.connection_manager.get_model_providers()
         if not llm_providers:
             raise ValueError("No configured LLM provider found")
-        self.model_provider = llm_providers[0]
+
+        # Filter to only providers that have models configured
+        configured_providers = [
+            provider for provider in llm_providers
+            if next((config for config in self.config if config["name"] == provider and "model" in config), None)
+        ]
+
+        if not configured_providers:
+            raise ValueError("No LLM providers have models configured")
+
+        # Try to use default provider if available and configured
+        default_provider = self._get_default_provider()
+        if default_provider in configured_providers:
+            self.model_provider = default_provider
+            provider_config = next(config for config in self.config if config["name"] == default_provider)
+            logger.info(f"Using default provider: {default_provider} (model: {provider_config['model']})")
+        else:
+            # Fallback to first available configured provider
+            self.model_provider = configured_providers[0]
+            provider_config = next(config for config in self.config if config["name"] == self.model_provider)
+            logger.info(f"Using provider: {self.model_provider} (model: {provider_config['model']})")
+
+        self.is_llm_set = True
 
         # Load Twitter username for self-reply detection if Twitter tasks exist
         if any("tweet" in task["name"] for task in self.tasks):
@@ -84,6 +110,62 @@ class ZerePyAgent:
             self.username = os.getenv('TWITTER_USERNAME', '').lower()
             if not self.username:
                 logger.warning("Twitter username not found, some Twitter functionalities may be limited")
+
+    def change_llm_provider(self, provider: str) -> bool:
+        """Change the current LLM provider
+        
+        Args:
+            provider: Name of the provider to switch to
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # Verify provider is available and configured
+        available_providers = self.connection_manager.get_model_providers()
+        if provider not in available_providers:
+            logger.error(f"Provider '{provider}' is not available or not configured")
+            logger.info("Available providers: " + ", ".join(available_providers))
+            return False
+            
+        # Verify provider has a model configured
+        provider_config = next((config for config in self.config if config["name"] == provider), None)
+        if not provider_config or "model" not in provider_config:
+            logger.error(f"No model configured for provider '{provider}'")
+            return False
+
+        self.model_provider = provider
+        logger.info(f"Changed LLM provider to: {provider} (using model: {provider_config['model']})")
+        return True
+
+    def _get_default_provider(self) -> str:
+        """Get the default LLM provider from config or fallback to 'openai'"""
+        return getattr(self, 'default_provider', 'openai')  # Default to 'openai' if not specified
+
+    def get_current_provider_info(self) -> dict:
+        """Get information about the current LLM provider and model
+        
+        Returns:
+            dict: Dictionary containing provider and model information
+        """
+        if not self.is_llm_set:
+            self._setup_llm_provider()
+                
+        provider_config = next(
+            (config for config in self.config 
+            if config["name"] == self.model_provider),
+            None
+        )
+        
+        if not provider_config:
+            return {
+                "provider": self.model_provider,
+                "model": "unknown"
+            }
+        
+        return {
+            "provider": self.model_provider,
+            "model": provider_config.get("model", "unknown")
+        }
 
     def _construct_system_prompt(self) -> str:
         """Construct the system prompt from agent configuration"""

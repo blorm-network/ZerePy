@@ -18,6 +18,7 @@
   "example_accounts": [
     "0xzerebro"
   ],
+  "default_provider": "openai",
   "loop_delay": 900,
   "config": [
     {

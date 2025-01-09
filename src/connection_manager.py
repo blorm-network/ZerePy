@@ -9,12 +9,14 @@ from src.connections.farcaster_connection import FarcasterConnection
 from src.connections.ollama_connection import OllamaConnection
 from src.connections.echochambers_connection import EchochambersConnection
 from src.connections.hyperbolic_connection import HyperbolicConnection
+from src.connections.youtube_connection import YouTubeConnection
 
 logger = logging.getLogger("connection_manager")
 
 class ConnectionManager:
     def __init__(self, agent_config):
         self.connections : Dict[str, BaseConnection] = {}
+        self.parent_agent = None
         for config in agent_config:
             self._register_connection(config)
     
@@ -36,6 +38,8 @@ class ConnectionManager:
             return EchochambersConnection
         elif class_name == "hyperbolic":
             return HyperbolicConnection
+        elif class_name == "youtube":
+            return YouTubeConnection
 
         return None
     
@@ -52,6 +56,7 @@ class ConnectionManager:
             name = config_dic["name"]
             connection_class = self._class_name_to_type(name)
             connection = connection_class(config_dic)
+            connection.connection_manager = self
             self.connections[name] = connection
         except Exception as e:
             logging.error(f"Failed to initialize connection {name}: {e}")

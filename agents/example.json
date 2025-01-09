@@ -32,6 +32,10 @@
       "cast_interval": 60
     },
     {
+      "name": "youtube",
+      "comment_fetch_count": 10
+    },
+    {
       "name": "openai",
       "model": "gpt-3.5-turbo"
     },

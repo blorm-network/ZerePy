@@ -5,6 +5,9 @@ description = "A launch-pad for AI agents"
 authors = ["Ayoub Ed <ayoub@blorm.xyz>", "Efrain <ef@blorm.xyz>", "Max <max@blorm.xyz>"]
 license = "MIT License"
 readme = "README.md"
+packages = [
+    { include = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -14,7 +17,9 @@ tweepy = "^4.14.0"
 prompt-toolkit = "^3.0.48"
 anthropic = "^0.42.0"
 farcaster = "^0.7.11"
-
+google-api-python-client = "^2.97.0"
+google-auth-oauthlib = "^1.0.0"
+google-auth-httplib2 = "^0.1.0"
 
 [build-system]
 requires = ["poetry-core"]

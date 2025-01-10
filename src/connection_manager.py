@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Type, Dict
 from src.connections.base_connection import BaseConnection
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
+from src.connections.goat_connection import GoatConnection
 from src.connections.openai_connection import OpenAIConnection
 from src.connections.twitter_connection import TwitterConnection
 from src.connections.farcaster_connection import FarcasterConnection
@@ -36,6 +37,8 @@ class ConnectionManager:
             return OllamaConnection
         elif class_name == "echochambers":
             return EchochambersConnection
+        elif class_name == "goat":
+            return GoatConnection
         elif class_name == "solana":
             return SolanaConnection
         elif class_name == "hyperbolic":

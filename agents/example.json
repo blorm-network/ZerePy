@@ -54,6 +54,23 @@
       "model": "llama3.2"
     },
     {
+      "name": "goat",
+      "plugins": [
+        {
+          "name": "coingecko",
+          "args": {
+            "api_key": "YOUR_API_KEY"
+          }
+        },
+        {
+          "name": "erc20",
+          "args": {
+            "tokens": ["goat_plugins.erc20.token.PEPE", "goat_plugins.erc20.token.USDC"]
+          }
+        }
+      ]
+    },
+    {
       "name": "hyperbolic",
       "model": "meta-llama/Meta-Llama-3-70B-Instruct"
     },

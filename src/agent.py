@@ -3,7 +3,6 @@ import random
 import time
 import logging
 import os
-import tiktoken
 from pathlib import Path
 from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager

@@ -12,6 +12,7 @@ from src.connections.solana_connection import SolanaConnection
 from src.connections.hyperbolic_connection import HyperbolicConnection
 from src.connections.pinecone_connection import PineconeConnection
 from src.connections.github_connection import GitHubConnection
+from src.connections.galadriel_connection import GaladrielConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -45,6 +46,8 @@ class ConnectionManager:
             return PineconeConnection
         elif class_name == "hyperbolic":
             return HyperbolicConnection
+        elif class_name == "galadriel":
+            return GaladrielConnection
 
         return None
     

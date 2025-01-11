@@ -26,6 +26,7 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 - EternalAI
 - Ollama
 - Hyperbolic
+- Galadriel
 
 ## Quickstart
 
@@ -51,6 +52,7 @@ Environment Variables:
   - Anthropic: https://console.anthropic.com/account/keys
   - EternalAI: https://eternalai.oerg/api
   - Hyperbolic: https://app.hyperbolic.xyz
+  - Galadriel: https://dashboard.galadriel.com
 - Social (based on your needs):
   - X API: https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret
   - Farcaster: Warpcast recovery phrase
@@ -109,7 +111,7 @@ poetry run python main.py
    configure-connection anthropic  # For Anthropic
    configure-connection farcaster  # For Farcaster
    configure-connection eternalai  # For EternalAI
-   configure-connection solana     # For Solana
+   configure-connection galadriel  # For Galadriel
    configure-connection solana     # For Solana
    ```
 
@@ -217,6 +219,10 @@ Create a new JSON file in the `agents` directory following this structure:
     {
       "name": "hyperbolic",
       "model": "meta-llama/Meta-Llama-3-70B-Instruct"
+    },
+    {
+      "name": "galadriel",
+      "model": "gpt-3.5-turbo"
     }
   ],
   "tasks": [

@@ -108,7 +108,8 @@ class ZerePyAgent:
                             action_name="get-latest-tweets",
                             params=[example_account]
                         )
-                        prompt_parts.extend(f"- {tweet['text']}" for tweet in tweets)
+                        if tweets:
+                            prompt_parts.extend(f"- {tweet['text']}" for tweet in tweets)
 
             self._system_prompt = "\n".join(prompt_parts)
 

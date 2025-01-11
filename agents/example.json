@@ -36,6 +36,14 @@
     {
       "name": "github",
       "repository": "blorm-network/ZerePy"
+    },
+    {
+      "name": "hyperbolic",
+      "model": "meta-llama/Meta-Llama-3-70B-Instruct"
+    },
+    {
+      "name": "galadriel",
+      "model": "gpt-3.5-turbo"
     }
   ],
   "tasks": [

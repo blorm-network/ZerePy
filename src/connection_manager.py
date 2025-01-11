@@ -10,6 +10,8 @@ from src.connections.ollama_connection import OllamaConnection
 from src.connections.echochambers_connection import EchochambersConnection
 from src.connections.solana_connection import SolanaConnection
 from src.connections.hyperbolic_connection import HyperbolicConnection
+from src.connections.pinecone_connection import PineconeConnection
+from src.connections.github_connection import GitHubConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -37,6 +39,10 @@ class ConnectionManager:
             return EchochambersConnection
         elif class_name == "solana":
             return SolanaConnection
+        elif class_name == "github":
+            return GitHubConnection
+        elif class_name == "pinecone":
+            return PineconeConnection
         elif class_name == "hyperbolic":
             return HyperbolicConnection
 

@@ -27,35 +27,15 @@
       "tweet_interval": 5400
     },
     {
-      "name": "farcaster",
-      "timeline_read_count": 10,
-      "cast_interval": 60
-    },
-    {
       "name": "openai",
       "model": "gpt-3.5-turbo"
     },
     {
-      "name": "anthropic",
-      "model": "claude-3-5-sonnet-20241022"
+      "name": "pinecone"
     },
     {
-      "name": "solana",
-      "rpc": "https://api.mainnet-beta.solana.com"
-    },
-    {
-      "name": "eternalai",
-      "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
-      "chain_id": "45762"
-    },
-    {
-      "name": "ollama",
-      "base_url": "http://localhost:11434",
-      "model": "llama3.2"
-    },
-    {
-      "name": "hyperbolic",
-      "model": "meta-llama/Meta-Llama-3-70B-Instruct"
+      "name": "github",
+      "repository": "blorm-network/ZerePy"
     }
   ],
   "tasks": [

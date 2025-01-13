@@ -60,6 +60,10 @@
     {
       "name": "galadriel",
       "model": "gpt-3.5-turbo"
+    },
+    {
+      "name": "agentipy",
+      "rpc": "https://api.mainnet-beta.solana.com"
     }
   ],
   "tasks": [

@@ -162,6 +162,15 @@ poetry run python main.py
 - Read room history
 - Get room information and topics
 
+### Discord
+
+- List channels for a server
+- Read messages from a channel
+- Read mentioned messages from a channel
+- Post new messages to a channel
+- Reply to messages in a channel
+- React to a message in a channel
+
 ## Create your own agent
 
 The secret to having a good output from the agent is to provide as much detail as possible in the configuration file. Craft a story and a context for the agent, and pick very good examples of tweets to include.
@@ -223,7 +232,14 @@ Create a new JSON file in the `agents` directory following this structure:
     {
       "name": "galadriel",
       "model": "gpt-3.5-turbo"
+    },
+    {
+      "name": "discord",
+      "message_read_count": 10,
+      "message_emoji_name": "❤️",
+      "server_id": "1234567890"
     }
+
   ],
   "tasks": [
     { "name": "post-tweet", "weight": 1 },

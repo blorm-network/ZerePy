@@ -7,7 +7,7 @@ from dotenv import load_dotenv, set_key
 from openai import OpenAI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("connections.galadriel_connection")
 
 class GaladrielConnectionError(Exception):
     """Base exception for Galadriel connection errors"""
@@ -75,17 +75,17 @@ class GaladrielConnection(BaseConnection):
 
     def configure(self) -> bool:
         """Sets up Galadriel API authentication"""
-        print("\n🤖 GALADRIEL API SETUP")
+        logger.info("\n🤖 GALADRIEL API SETUP")
 
         if self.is_configured():
-            print("\nGaladriel API is already configured.")
+            logger.info("\nGaladriel API is already configured.")
             response = input("Do you want to reconfigure? (y/n): ")
             if response.lower() != 'y':
                 return True
 
-        print("\n📝 To get your Galadriel API credentials:")
-        print("1. Go to https://dashboard.galadriel.com/dashboard/api_keys")
-        print("2. Create a new API key.")
+        logger.info("\n📝 To get your Galadriel API credentials:")
+        logger.info("1. Go to https://dashboard.galadriel.com/dashboard/api_keys")
+        logger.info("2. Create a new API key.")
 
         api_key = input("\nEnter your Galadriel API key: ")
         fine_tune_api_key = input("\nEnter your Optional fine-tune API key: ")
@@ -104,8 +104,8 @@ class GaladrielConnection(BaseConnection):
                 logger.error(f"Configuration failed: invalid API key")
                 return False
 
-            print("\n✅ Galadriel API configuration successfully saved!")
-            print("Your API key has been stored in the .env file.")
+            logger.info("\n✅ Galadriel API configuration successfully saved!")
+            logger.info("Your API key has been stored in the .env file.")
             return True
 
         except Exception as e:

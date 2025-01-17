@@ -5,20 +5,29 @@ from typing import Dict, Any
 from dotenv import load_dotenv, set_key
 from openai import OpenAI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from web3 import Web3
+import requests
 
 logger = logging.getLogger("connections.eternalai_connection")
+IPFS = "ipfs://"
+LIGHTHOUSE_IPFS = "https://gateway.lighthouse.storage/ipfs/"
+GCS_ETERNAL_AI_BASE_URL = "https://cdn.eternalai.org/upload/"
+AGENT_CONTRACT_ABI = [{"inputs": [{"internalType": "uint256","name": "_agentId","type": "uint256"}],"name": "getAgentSystemPrompt","outputs": [{"internalType": "bytes[]","name": "","type": "bytes[]"}],"stateMutability": "view","type": "function"}]
 
 class EternalAIConnectionError(Exception):
     """Base exception for EternalAI connection errors"""
     pass
 
+
 class EternalAIConfigurationError(EternalAIConnectionError):
     """Raised when there are configuration/credential issues"""
     pass
 
+
 class EternalAIAPIError(EternalAIConnectionError):
     """Raised when EternalAI API requests fail"""
     pass
+
 
 class EternalAIConnection(BaseConnection):
     def __init__(self, config: Dict[str, Any]):
@@ -33,13 +42,13 @@ class EternalAIConnection(BaseConnection):
         """Validate EternalAI configuration from JSON"""
         required_fields = ["model"]
         missing_fields = [field for field in required_fields if field not in config]
-        
+
         if missing_fields:
             raise ValueError(f"Missing required configuration fields: {', '.join(missing_fields)}")
-            
+
         if not isinstance(config["model"], str):
             raise ValueError("model must be a string")
-            
+
         return config
 
     def register_actions(self) -> None:
@@ -134,6 +143,26 @@ class EternalAIConnection(BaseConnection):
                 logger.debug(f"Configuration check failed: {e}")
             return False
 
+    @staticmethod
+    def get_on_chain_system_prompt_content(on_chain_data: str) -> str:
+        if IPFS in on_chain_data:
+            light_house = on_chain_data.replace(IPFS, LIGHTHOUSE_IPFS)
+            response = requests.get(light_house)
+            if response.status_code == 200:
+                return response.text
+            else:
+                gcs = on_chain_data.replace(IPFS, GCS_ETERNAL_AI_BASE_URL)
+                response = requests.get(gcs)
+                if response.status_code == 200:
+                    return response.text
+                else:
+                    raise Exception(f"invalid on-chain system prompt response status{response.status_code}")
+        else:
+            if len(on_chain_data) > 0:
+                return on_chain_data
+            else:
+                raise Exception(f"invalid on-chain system prompt")
+
     def generate_text(self, prompt: str, system_prompt: str, model: str = None, chain_id: str = None, **kwargs) -> str:
         """Generate text using EternalAI models"""
         try:
@@ -145,6 +174,25 @@ class EternalAIConnection(BaseConnection):
             if not chain_id or chain_id == "":
                 chain_id = "45762"
             logger.info(f"chain_id {chain_id}")
+
+            agent_id = self.config["agent_id"] or None
+            contract_address = self.config["contract_address"] or None
+            rpc = self.config["rpc_url"] or None
+
+            if agent_id and contract_address and rpc:
+                logger.info(f"agent_id: {agent_id}, contract_address: {contract_address}")
+                # call on-chain system prompt
+                web3 = Web3(Web3.HTTPProvider(rpc))
+                logger.info(f"web3 connected to {rpc} {web3.is_connected()}")
+                contract = web3.eth.contract(address=contract_address, abi=AGENT_CONTRACT_ABI)
+                result = contract.functions.getAgentSystemPrompt(agent_id).call()
+                logger.info(f"on-chain system_prompt: {result}")
+                if len(result) > 0:
+                    try:
+                        system_prompt = self.get_on_chain_system_prompt_content(result[0].decode("utf-8"))
+                        logging.info(f"new system_prompt: {system_prompt}")
+                    except Exception as e:
+                        logger.error(f"get on-chain system_prompt fail {e}")
 
             completion = client.chat.completions.create(
                 model=model,
@@ -184,18 +232,18 @@ class EternalAIConnection(BaseConnection):
         try:
             client = self._get_client()
             response = client.models.list().data
-            
+
             # Filter for fine-tuned models
             fine_tuned_models = [
-                model for model in response 
+                model for model in response
                 if model.owned_by in ["organization", "user", "organization-owner"]
             ]
-            
+
             if fine_tuned_models:
                 logger.info("\nFINE-TUNED MODELS:")
                 for i, model in enumerate(fine_tuned_models):
-                    logger.info(f"{i+1}. {model.id}")
-                    
+                    logger.info(f"{i + 1}. {model.id}")
+
         except Exception as e:
             raise EternalAIAPIError(f"Listing models failed: {e}")
 

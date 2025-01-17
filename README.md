@@ -111,8 +111,9 @@ poetry run python main.py
    configure-connection anthropic  # For Anthropic
    configure-connection farcaster  # For Farcaster
    configure-connection eternalai  # For EternalAI
-   configure-connection galadriel  # For Galadriel
    configure-connection solana     # For Solana
+   configure-connection goat       # For Goat
+   configure-connection galadriel  # For Galadriel
    ```
 
 2. Use `list-connections` to see all available connections and their status
@@ -128,7 +129,132 @@ poetry run python main.py
    start
    ```
 
+## GOAT Integration
+
+GOAT (Go Agent Tools) is a powerful plugin system that allows your agent to interact with various blockchain networks and protocols. Here's how to set it up:
+
+### Prerequisites
+
+1. An RPC provider URL (e.g., from Infura, Alchemy, or your own node)
+2. A wallet private key for signing transactions
+
+### Installation
+
+Install any of the additional [GOAT plugins](https://github.com/goat-sdk/goat/tree/main/python/src/plugins) you want to use:
+
+```bash
+poetry add goat-sdk-plugin-erc20         # For ERC20 token interactions
+poetry add goat-sdk-plugin-coingecko     # For price data
+```
+
+### Configuration
+
+1. Configure the GOAT connection using the CLI:
+
+   ```bash
+   configure-connection goat
+   ```
+
+   You'll be prompted to enter:
+
+   - RPC provider URL
+   - Wallet private key (will be stored securely in .env)
+
+2. Add GOAT plugins configuration to your agent's JSON file:
+
+   ```json
+   {
+     "name": "YourAgent",
+     "config": [
+       {
+         "name": "goat",
+         "plugins": [
+           {
+             "name": "erc20",
+             "args": {
+               "tokens": [
+                 "goat_plugins.erc20.token.PEPE",
+                 "goat_plugins.erc20.token.USDC"
+               ]
+             }
+           },
+           {
+             "name": "coingecko",
+             "args": {
+               "api_key": "YOUR_API_KEY"
+             }
+           }
+         ]
+       }
+     ]
+   }
+   ```
+
+Note that the order of plugins in the configuration doesn't matter, but each plugin must have a `name` and `args` field with the appropriate configuration options. You will have to check the documentation for each plugin to see what arguments are available.
+
+### Available Plugins
+
+Each [plugin](https://github.com/goat-sdk/goat/tree/main/python/src/plugins) provides specific functionality:
+
+- **1inch**: Interact with 1inch DEX aggregator for best swap rates
+- **allora**: Connect with Allora protocol
+- **coingecko**: Get real-time price data for cryptocurrencies using the CoinGecko API
+- **dexscreener**: Access DEX trading data and analytics
+- **erc20**: Interact with ERC20 tokens (transfer, approve, check balances)
+- **farcaster**: Interact with the Farcaster social protocol
+- **nansen**: Access Nansen's on-chain analytics
+- **opensea**: Interact with NFTs on OpenSea marketplace
+- **rugcheck**: Analyze token contracts for potential security risks
+- Many more to come...
+
+Note: While these plugins are available in the GOAT SDK, you'll need to install them separately using Poetry and configure them in your agent's JSON file. Each plugin may require its own API keys or additional setup.
+
+### Plugin Configuration
+
+Each plugin has its own configuration options that can be specified in the agent's JSON file:
+
+1. **ERC20 Plugin**:
+
+   ```json
+   {
+     "name": "erc20",
+     "args": {
+       "tokens": [
+         "goat_plugins.erc20.token.USDC",
+         "goat_plugins.erc20.token.PEPE",
+         "goat_plugins.erc20.token.DAI"
+       ]
+     }
+   }
+   ```
+
+2. **Coingecko Plugin**:
+   ```json
+   {
+     "name": "coingecko",
+     "args": {
+       "api_key": "YOUR_COINGECKO_API_KEY"
+     }
+   }
+   ```
+
 ## Platform Features
+
+### GOAT
+
+- Interact with EVM chains through a unified interface
+- Manage ERC20 tokens:
+  - Check token balances
+  - Transfer tokens
+  - Approve token spending
+  - Get token metadata (decimals, symbol, name)
+- Access real-time cryptocurrency data:
+  - Get token prices
+  - Track market data
+  - Monitor price changes
+- Extensible plugin system for future protocols
+- Secure wallet management with private key storage
+- Multi-chain support through configurable RPC endpoints
 
 ### Solana
 

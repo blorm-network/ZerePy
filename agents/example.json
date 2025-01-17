@@ -38,12 +38,33 @@
       "repository": "blorm-network/ZerePy"
     },
     {
+      "name": "goat",
+      "plugins": [
+        {
+          "name": "coingecko",
+          "args": {
+            "api_key": "YOUR_API_KEY"
+          }
+        },
+        {
+          "name": "erc20",
+          "args": {
+            "tokens": ["goat_plugins.erc20.token.PEPE", "goat_plugins.erc20.token.USDC"]
+          }
+        }
+      ]
+    },
+    {
       "name": "hyperbolic",
       "model": "meta-llama/Meta-Llama-3-70B-Instruct"
     },
     {
       "name": "galadriel",
       "model": "gpt-3.5-turbo"
+    },
+    {
+      "name": "allora",
+      "chain_slug": "testnet"
     }
   ],
   "tasks": [

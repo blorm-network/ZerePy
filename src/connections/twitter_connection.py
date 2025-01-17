@@ -3,7 +3,6 @@ import logging
 from typing import Dict, Any, List, Tuple
 from requests_oauthlib import OAuth1Session
 from dotenv import set_key, load_dotenv
-import tweepy
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 from src.helpers import print_h_bar
 
@@ -327,16 +326,8 @@ class TwitterConnection(BaseConnection):
         """Check if Twitter credentials are configured and valid"""
         logger.debug("Checking Twitter configuration status")
         try:
-            credentials = self._get_credentials()
-
-            # Initialize client and validate credentials
-            client = tweepy.Client(
-                consumer_key=credentials['TWITTER_CONSUMER_KEY'],
-                consumer_secret=credentials['TWITTER_CONSUMER_SECRET'],
-                access_token=credentials['TWITTER_ACCESS_TOKEN'],
-                access_token_secret=credentials['TWITTER_ACCESS_TOKEN_SECRET'])
-
-            client.get_me()
+            # Test the configuration by making a simple API call
+            self._get_authenticated_user_info()
             logger.debug("Twitter configuration is valid")
             return True
 

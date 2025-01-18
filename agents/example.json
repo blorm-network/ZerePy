@@ -81,6 +81,10 @@
     {
       "name": "allora",
       "chain_slug": "testnet"
+    },
+    {
+      "name": "debridge",
+      "api_url": "https://dln.debridge.finance/v1.0"
     }
   ],
   "tasks": [

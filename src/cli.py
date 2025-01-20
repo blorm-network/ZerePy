@@ -2,6 +2,7 @@ import sys
 import json
 import logging
 import os
+import asyncio
 from dataclasses import dataclass
 from typing import Callable, Dict, List
 from pathlib import Path
@@ -11,6 +12,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from src.agent import ZerePyAgent
+from src.api import API
 from src.helpers import print_h_bar
 
 # Configure logging
@@ -57,6 +59,16 @@ class ZerePyCLI:
                       "Try 'help {command}' to get more information about a specific command."],
                 handler=self.help,
                 aliases=['h', '?']
+            )
+        )
+
+        self._register_command(
+            Command(
+                name="start-api",
+                description="Start the FastAPI server for chatbot operations.",
+                tips=["Use this command to start the API server."],
+                handler=self.start_api,
+                aliases=['api']
             )
         )
 
@@ -248,7 +260,10 @@ class ZerePyCLI:
         try:
             command = self.commands.get(command_string)
             if command:
-                command.handler(input_list)
+                if asyncio.iscoroutinefunction(command.handler):
+                    asyncio.run(command.handler(input_list))
+                else:
+                    command.handler(input_list)
             else:
                 self._handle_unknown_command(command_string)
         except Exception as e:
@@ -379,6 +394,15 @@ class ZerePyCLI:
         """Clear the terminal screen"""
         os.system('cls' if os.name == 'nt' else 'clear')
         self._print_welcome_message(clearing=True)
+
+    async def start_api(self, host="0.0.0.0", port=8000):
+        """Start the FastAPI server"""
+        try:
+            api = API(self.agent)
+            await api.run()
+        except Exception as e:
+            logger.error(f"Error starting API. Error: {e}")
+
 
     def agent_action(self, input_list: List[str]) -> None:
         """Handle agent action command"""

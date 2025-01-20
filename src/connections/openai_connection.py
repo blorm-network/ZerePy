@@ -65,6 +65,13 @@ class OpenAIConnection(BaseConnection):
                 name="list-models",
                 parameters=[],
                 description="List all available OpenAI models"
+            ),
+            "generate-embeddings": Action(
+                name="generate-embeddings",
+                parameters=[
+                    ActionParameter("chunks", True, list, "The list of chunks to create embeddings for.")
+                ],
+                description="Create embeddings for the chunks of texts provided"
             )
         }
 
@@ -151,6 +158,31 @@ class OpenAIConnection(BaseConnection):
             
         except Exception as e:
             raise OpenAIAPIError(f"Text generation failed: {e}")
+    
+    def generate_embeddings(self, chunks: list, model: str = None):
+        """Generate embeddings using OpenAI models"""
+        try:
+            client = self._get_client()
+            embeddings = []
+
+            if not model:
+                model = "text-embedding-ada-002"
+
+            for index, chunk in enumerate(chunks):
+                try:
+                    logger.debug(f"Processing chunk index {index}: {chunk[:100]}...")  # Log part of the chunk
+                    response = client.embeddings.create(input=chunk, model=model)
+                    embeddings.append(response.data[0].embedding)
+                    logger.info(f"Processed chunk index: {index}")
+                except Exception as e:
+                    logger.error(f"Error processing chunk index {index}: {e}")
+                    continue  # Skip to the next chunk if an error occurs
+
+            return embeddings
+
+        except Exception as e:
+            raise OpenAIAPIError(f"Embedding generation failed: {e}")
+
 
     def check_model(self, model, **kwargs):
         try:

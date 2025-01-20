@@ -11,6 +11,8 @@ from src.connections.ollama_connection import OllamaConnection
 from src.connections.echochambers_connection import EchochambersConnection
 from src.connections.solana_connection import SolanaConnection
 from src.connections.hyperbolic_connection import HyperbolicConnection
+from src.connections.pinecone_connection import PineconeConnection
+from src.connections.github_connection import GitHubConnection
 from src.connections.galadriel_connection import GaladrielConnection
 from src.connections.discord_connection import DiscordConnection
 from src.connections.allora_connection import AlloraConnection
@@ -45,6 +47,10 @@ class ConnectionManager:
             return GoatConnection
         elif class_name == "solana":
             return SolanaConnection
+        elif class_name == "github":
+            return GitHubConnection
+        elif class_name == "pinecone":
+            return PineconeConnection
         elif class_name == "hyperbolic":
             return HyperbolicConnection
         elif class_name == "galadriel":

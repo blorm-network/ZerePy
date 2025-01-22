@@ -110,7 +110,7 @@ class DeBridgeConnection(BaseConnection):
                         dstChainTokenOutRecipient: str,
                         dstChainTokenOutAmount: str = "auto",
                         affiliateFeePercent: str = "0",
-                        prependOperatingExpenses: bool = False,
+                        prependOperatingExpenses: bool = True,
                         skipSolanaRecipientValidation: bool = False) -> Dict[str, Any]:
         """
         Create a cross-chain bridging transaction

@@ -40,6 +40,10 @@
       "model": "claude-3-5-sonnet-20241022"
     },
     {
+      "name": "xai",
+      "model": "grok-2-latest"
+    },    
+    {
       "name": "solana",
       "rpc": "https://api.mainnet-beta.solana.com"
     },
@@ -79,12 +83,26 @@
       "model": "gpt-3.5-turbo"
     },
     {
+      "name": "sonic",
+      "network": "mainnet"
+    },
+    {
       "name": "allora",
       "chain_slug": "testnet"
     },
     {
       "name": "debridge",
       "api_url": "https://dln.debridge.finance/v1.0"
+    },
+    {
+      "name": "ethereum",
+      "rpc": "https://eth.blockrazor.xyz"  
+    },
+    {
+      "name": "discord",
+      "message_read_count": 10,
+      "message_emoji_name": "❤️",
+      "server_id": "1234567890"
     }
   ],
   "tasks": [

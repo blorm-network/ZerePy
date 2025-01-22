@@ -326,6 +326,9 @@ class TwitterConnection(BaseConnection):
         """Check if Twitter credentials are configured and valid"""
         logger.debug("Checking Twitter configuration status")
         try:
+            # check if credentials exist
+            self._get_credentials()
+
             # Test the configuration by making a simple API call
             self._get_authenticated_user_info()
             logger.debug("Twitter configuration is valid")

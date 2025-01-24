@@ -31,7 +31,7 @@ RUN poetry install --no-root --only main
 # Copy the rest of your application code into the container
 COPY . /app/
 
-EXPOSE 80
-
+EXPOSE 3000
+ENV DSTACK_SIMULATOR_ENDPOINT="http://host.docker.internal:8000"
 # Command to run the application using the shell form
-CMD ["poetry", "run", "gunicorn", "-w", "4", "-b", "0.0.0.0:80","serve:app"]
+CMD ["poetry", "run", "gunicorn", "-w", "1", "-b", "0.0.0.0:3000","serve:app"]

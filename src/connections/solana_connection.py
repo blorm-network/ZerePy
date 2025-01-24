@@ -1,5 +1,6 @@
 import logging
 import os
+from base58 import b58decode
 import requests
 import asyncio
 from typing import Dict, Any, Optional
@@ -254,6 +255,32 @@ class SolanaConnection(BaseConnection):
             logger.error(f"\n❌ Configuration failed: {e}")
             return False
 
+    def is_valid_solana_private_key(private_key_string):
+        """
+        Checks if a given string is a valid Solana private key.
+
+        Args:
+            private_key_string (str): The private key string to validate.
+
+        Returns:
+            bool: True if the key is valid, False otherwise.
+        """
+
+        try:
+            # Attempt to decode the private key from base58
+            private_key_bytes = b58decode(private_key_string)
+
+            # Check if the decoded key has the correct length
+            if len(private_key_bytes) != 64:
+                return False
+
+            # Attempt to create a Keypair from the private key
+            Keypair.from_base58_string(private_key_string)
+            return True
+
+        except Exception:
+            return False
+
     def is_configured(self, verbose: bool = False) -> bool:
         """Check if Solana credentials are configured and valid"""
         try:
@@ -265,15 +292,16 @@ class SolanaConnection(BaseConnection):
                     logger.debug("Solana private key not found in environment")
                 return False
 
-            # Validate the key format
-            Keypair.from_base58_string(private_key)
+            if not SolanaConnection.is_valid_solana_private_key(private_key):
+                logger.info("Invalid Solana private key")
+                return False
 
             # We successfully validated the private key exists and is in correct format
             if verbose:
                 logger.debug("Solana configuration is valid")
             return True
-
         except Exception as e:
+            logger.debug(f"Solana configuration validation failed: {str(e)}")
             if verbose:
                 error_msg = str(e)
                 if isinstance(e, SolanaConfigurationError):

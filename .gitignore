@@ -18,3 +18,5 @@ agents/*.json
 # macOS
 .DS_Store
 .codegpt
+venv
+.mypy_cache

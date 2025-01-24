@@ -3,6 +3,17 @@ services:
   zerepy:
     image: ruxdoteth/zerepy:zerepy
     container_name: zerepy
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cd /app
+        rm -rf agents
+        mkdir agents
+        echo "Creating agent config"
+        echo ${AGENT_CONFIG} | base64 -d > agents/${AGENT_NAME}.json
+        echo ${GENERAL_CONFIG} | base64 -d > agents/general.json
+        poetry run gunicorn -w 1 -b 0.0.0.0:3000 serve:app
     environment:
       - ALLORA_API_KEY=${ALLORA_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
@@ -27,8 +38,16 @@ services:
       - RESPONSES_QUEUE=${RESPONSES_QUEUE}
       - SERVER_HOST=${SERVER_HOST}
       - SERVER_PORT=${SERVER_PORT}
+      - DSTACK_SIMULATOR_ENDPOINT=${DSTACK_SIMULATOR_ENDPOINT}
     ports:
-      - 80:80
+      - "3000:3000"
+    networks:
+      - zerepy-network
+  tappd:
+    image: phalanetwork/tappd-simulator:latest
+    container_name: tappd
+    ports:
+      - "8000:8090"
     networks:
       - zerepy-network
 

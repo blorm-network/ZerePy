@@ -45,13 +45,25 @@
     },
     "hyperbolic": { "model": "meta-llama/Meta-Llama-3-70B-Instruct" },
     "galadriel": { "model": "gpt-3.5-turbo" },
-    "allora": { "chain_slug": "testnet" }
+    "allora": { "chain": "testnet" }
   },
-  "tasks": [
-    { "name": "post-tweet", "weight": 1 },
-    { "name": "reply-to-tweet", "weight": 1 },
-    { "name": "like-tweet", "weight": 1 }
-  ],
+  "tasks": {
+    "post_tweet": {
+      "weight": 1,
+      "min_interval": 1800,
+      "max_interval": 7200
+    },
+    "reply_to_tweet": {
+      "weight": 1,
+      "min_interval": 1800,
+      "max_interval": 7200
+    },
+    "like_tweet": {
+      "weight": 1,
+      "min_interval": 1800,
+      "max_interval": 7200
+    }
+  },
   "use_time_based_weights": false,
   "time_based_multipliers": {
     "tweet_night_multiplier": 0.4,

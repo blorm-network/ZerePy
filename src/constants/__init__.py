@@ -1,6 +1,5 @@
 from solders.pubkey import Pubkey
 
-from src.solana.solana_config import SolanaConfig
 
 # Common token addresses used across the toolkit
 SPL_TOKENS = {
@@ -23,5 +22,3 @@ JUP_API = "https://quote-api.jup.ag/v6"
 
 LAMPORTS_PER_SOL = 1_000_000_000
 SOL_FEES = 100_000_000
-
-CONNECTION_CONFIGS = [SolanaConfig]

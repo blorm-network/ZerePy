@@ -14,7 +14,7 @@ CONTROLLERS: List[Any] = [AgentController]
 PROVIDERS: List[Any] = [AgentService]
 
 # exports
-EXPORTS: List[Any] = [AgentService]
+EXPORTS: List[Any] = []
 
 
 @Module(

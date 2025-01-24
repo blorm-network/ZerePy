@@ -4,10 +4,19 @@ from nest.core.decorators.cli.cli_decorators import CliCommand, CliController
 from src.solana.solana_service import SolanaService
 import logging
 from solders.pubkey import Pubkey
+from src.lib.base_config import BASE_CONFIG, AgentName
 
 # how do i change the color of the font for the logger?
 
 logger = logging.getLogger(__name__)
+
+
+class SolanaCommandArguments:
+    AGENT = click.Argument(
+        ["agent"],
+        required=True,
+        type=SolanaService.get_cfg,
+    )
 
 
 class SolanaOptions:
@@ -17,17 +26,11 @@ class SolanaOptions:
         required=True,
         type=float,
     )
-    AGENT = click.Option(
-        ["-a", "--agent"],
-        help="Agent to use",
-        required=True,
-        type=str,
-    )
     TOKEN_ADDRESS = click.Option(
         ["-t", "--token-address"],
         help="SPL token mint address (optional)",
         required=False,
-        type=str,
+        type=Pubkey.from_string,
     )
 
 
@@ -36,20 +39,14 @@ class SolanaCliController:
     def __init__(self, solana_service: SolanaService):
         self.solana_service = solana_service
 
-    @CliCommand("health")
-    def health(self, agent: SolanaOptions.AGENT) -> None:  # type: ignore
-        res = self.solana_service.health(agent)
-        logger.info(res)
-
     # configures
     # transfer
     # swap
     # balance
     @CliCommand("balance")
-    async def balance(self, agent: SolanaOptions.AGENT, token_address: SolanaOptions.TOKEN_ADDRESS) -> None:  # type: ignore
+    async def balance(self, agent: SolanaCommandArguments.AGENT, token_address: SolanaOptions.TOKEN_ADDRESS) -> None:  # type: ignore
         logger.debug(f"Getting balance for {token_address}")
-        spl: Pubkey | None = Pubkey.from_string(token_address) if not None else None
-        res = await self.solana_service.get_balance(agent, spl)
+        res = await self.solana_service.get_balance(agent, token_address)
         logger.info(
             f"Result: {res}",
         )
@@ -57,7 +54,7 @@ class SolanaCliController:
     # stake
     @CliCommand("stake")
     def stake(
-        self, agent: SolanaOptions.AGENT, input_amount: SolanaOptions.INPUT_AMOUNT  # type: ignore
+        self, agent: SolanaCommandArguments.AGENT, input_amount: SolanaOptions.INPUT_AMOUNT  # type: ignore
     ) -> None:
         res = self.solana_service.stake(agent, input_amount)
         logger.info(res)

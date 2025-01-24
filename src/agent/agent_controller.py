@@ -3,15 +3,16 @@ import logging
 from click import Parameter
 import click
 from nest.core.decorators.cli.cli_decorators import CliController, CliCommand
+from pydantic import TypeAdapter
 from .agent_service import AgentService
+from src.lib.base_config import AgentName
 
 
-class CommandOptions:
-    AGENT = click.Option(
-        ["-a", "--agent"], help="Agent to use", required=True, type=str
-    )
-    CONNECTION = click.Option(
-        ["-c", "--connection"], help="Connection to use", required=True, type=str
+class AgentCommandArguments:
+    AGENT = click.Argument(
+        ["agent"],
+        required=True,
+        type=TypeAdapter(AgentName).validate_python,
     )
 
 
@@ -21,20 +22,29 @@ class AgentController:
         self.agent_service: AgentService = agent_service
 
     @CliCommand("get-config")
-    def config(self, agent: CommandOptions.AGENT) -> None:  # type: ignore
+    def config(self, agent: AgentCommandArguments.AGENT) -> None:
         res = self.agent_service.get_config(agent)
-        # pretty print with indent=4
-        logging.info(f"Result: {json.dumps(res, indent=2)}")
-
-    @CliCommand("list")
-    def list(self) -> None:
-        res = self.agent_service.list_agents()
         logging.info(f"Result: {res}")
+
+    @CliCommand("list-agents")
+    def list_agents(self) -> None:
+        res = self.agent_service.get_agents()
+        logging.info(f"Result:\n{res}")
 
     @CliCommand("list-connections")
-    def list_connections(self, agent: CommandOptions.AGENT) -> None:  # type: ignore
+    def list_connections(self, agent: AgentCommandArguments.AGENT) -> None:
         res = self.agent_service.get_connections(agent)
-        logging.info(f"Result: {res}")
+        logging.info(f"Result:\n{res}")
+
+    @CliCommand("list-all")
+    def list_everything(self) -> None:
+        res: dict[str, list[str]] = self.agent_service.get_everything()
+        res_str = "\nResult:"
+        for key, value in res.items():
+            res_str = f"{res_str}\nAgent name: {key}\n\tAvailable Connections:\n"
+            for connection in value:
+                res_str = f"{res_str}\t\t - {connection}\n\t\t\t - python main.py {connection} --agent={key}\n"
+        logging.info(res_str)
 
     # TODO: agent loop
     # TODO: chat

@@ -106,7 +106,7 @@ This will create a virtual environment and install all required dependencies.
 1. Activate the virtual environment:
 
 ```bash
-poetry shell
+poetry self add poetry-plugin-shell
 ```
 
 2. Run the application:

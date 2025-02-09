@@ -1,5 +1,6 @@
 import os
 import logging
+import asyncio
 from typing import Dict, Any
 from dotenv import set_key, load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
@@ -33,6 +34,26 @@ class DiscordConnection(BaseConnection):
         super().__init__(config)
         self.base_url = "https://discord.com/api/v10"
         self.bot_username = None
+        self.gateway = None
+        self._event_loop = None
+        self._gateway_task = None
+        self._initialize_gateway()
+        
+    def __del__(self):
+        """Cleanup Gateway connection."""
+        if self._event_loop and self._gateway_task:
+            self._event_loop.run_until_complete(self._cleanup_gateway())
+            
+    async def _cleanup_gateway(self):
+        """Clean up Gateway resources."""
+        if self._gateway_task:
+            self._gateway_task.cancel()
+            try:
+                await self._gateway_task
+            except:
+                pass
+        if self.gateway and self.gateway.ws:
+            await self.gateway.ws.close()
 
     @property
     def is_llm_provider(self) -> bool:
@@ -214,11 +235,77 @@ class DiscordConnection(BaseConnection):
                 return False
 
             self._test_connection(api_key)
+            self._initialize_gateway()
             return True
         except Exception as e:
             if verbose:
                 logger.debug(f"Configuration check failed: {e}")
             return False
+            
+    def _initialize_gateway(self):
+        """Initialize Discord Gateway connection."""
+        try:
+            token = os.getenv('DISCORD_TOKEN')
+            if token:
+                from src.connections.discord.gateway import GatewayConfig, DiscordGateway
+                config = GatewayConfig(token=token)
+                self.gateway = DiscordGateway(config)
+                
+                # Create event loop in the current thread if none exists
+                try:
+                    self._event_loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    self._event_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(self._event_loop)
+                
+                # Start gateway connection and event handlers
+                self._gateway_task = self._event_loop.create_task(self._start_gateway())
+                logger.info("Discord Gateway initialization started")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Gateway: {e}")
+            # Don't raise - maintain backward compatibility
+            
+    async def _start_gateway(self):
+        """Start Gateway connection and event handlers."""
+        try:
+            await self.gateway.connect()
+            
+            # Register event handlers
+            await self.gateway.handle_event('MESSAGE_CREATE', self._handle_message)
+            await self.gateway.handle_event('MESSAGE_UPDATE', self._handle_message_update)
+            await self.gateway.handle_event('MESSAGE_DELETE', self._handle_message_delete)
+            
+            # Start message processing
+            await self.gateway._process_messages()
+            
+        except Exception as e:
+            logger.error(f"Gateway connection failed: {e}")
+            # Don't raise - maintain backward compatibility
+            
+    async def _handle_message(self, data: Dict[str, Any]):
+        """Handle new message events."""
+        try:
+            formatted_message = self._format_messages([data])[0]
+            logger.debug(f"Received message: {formatted_message['id']}")
+        except Exception as e:
+            logger.error(f"Failed to handle message: {e}")
+            
+    async def _handle_message_update(self, data: Dict[str, Any]):
+        """Handle message update events."""
+        try:
+            formatted_message = self._format_messages([data])[0]
+            logger.debug(f"Message updated: {formatted_message['id']}")
+        except Exception as e:
+            logger.error(f"Failed to handle message update: {e}")
+            
+    async def _handle_message_delete(self, data: Dict[str, Any]):
+        """Handle message delete events."""
+        try:
+            message_id = data.get('id')
+            channel_id = data.get('channel_id')
+            logger.debug(f"Message deleted: {message_id} from {channel_id}")
+        except Exception as e:
+            logger.error(f"Failed to handle message delete: {e}")
 
     def perform_action(self, action_name: str, kwargs) -> Any:
         if action_name not in self.actions:
@@ -260,11 +347,13 @@ class DiscordConnection(BaseConnection):
 
     def read_messages(self, channel_id: str, count: int, **kwargs) -> dict:
         """Reading messages in a channel"""
-        logger.debug("Sending a new message")
+        logger.debug("Reading messages")
+        after = kwargs.get('after')
         request_path = f"/channels/{channel_id}/messages?limit={count}"
+        if after:
+            request_path += f"&after={after}"
         response = self._get_request(request_path)
         formatted_response = self._format_messages(response)
-
         logger.info(f"Retrieved {len(formatted_response)} messages")
         return formatted_response
 

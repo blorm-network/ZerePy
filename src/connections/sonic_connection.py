@@ -35,7 +35,8 @@ class SonicConnection(BaseConnection):
         super().__init__(config)
         self._initialize_web3()
         self.ERC20_ABI = ERC20_ABI
-        self.NATIVE_TOKEN = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        self.WRAPPED_SONIC = "0x039e2fB66102314Ce7b64Ce5Ce3E5183bc94aD38"
+        self.WRAPPED_ETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
         self.aggregator_api = "https://aggregator-api.kyberswap.com/sonic/api/v1"
 
     def _get_explorer_link(self, tx_hash: str) -> str:
@@ -76,7 +77,9 @@ class SonicConnection(BaseConnection):
         """Get token address by ticker symbol"""
         try:
             if ticker.lower() in ["s", "S"]:
-                return "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+                return self.WRAPPED_SONIC
+            elif ticker.lower() in ["eth", "ETH"]:
+                return self.WRAPPED_ETH
                 
             response = requests.get(
                 f"https://api.dexscreener.com/latest/dex/search?q={ticker}"
@@ -92,15 +95,7 @@ class SonicConnection(BaseConnection):
             ]
             sonic_pairs.sort(key=lambda x: x.get("fdv", 0), reverse=True)
 
-            sonic_pairs = [
-                pair
-                for pair in sonic_pairs
-                if pair.get("baseToken", {}).get("symbol", "").lower() == ticker.lower()
-            ]
-
-            if sonic_pairs:
-                return sonic_pairs[0].get("baseToken", {}).get("address")
-            return None
+            return sonic_pairs[0].get("baseToken", {}).get("address") if sonic_pairs else None
 
         except Exception as error:
             logger.error(f"Error fetching token address: {str(error)}")

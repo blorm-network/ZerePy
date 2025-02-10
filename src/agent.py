@@ -1,6 +1,6 @@
 import json
 import random
-import time
+import asyncio
 import logging
 import os
 from pathlib import Path
@@ -36,6 +36,7 @@ class ZerePyAgent:
             self.examples = agent_dict["examples"]
             self.example_accounts = agent_dict["example_accounts"]
             self.loop_delay = agent_dict["loop_delay"]
+            self.error_delay = agent_dict.get("error_delay", 60)  # Default 60s delay on errors
             self.connection_manager = ConnectionManager(agent_dict["config"])
             self.use_time_based_weights = agent_dict["use_time_based_weights"]
             self.time_based_multipliers = agent_dict["time_based_multipliers"]
@@ -157,7 +158,7 @@ class ZerePyAgent:
         
         return random.choices(self.tasks, weights=task_weights, k=1)[0]
 
-    def loop(self):
+    async def loop(self):
         """Main agent loop for autonomous behavior"""
         if not self.is_llm_set:
             self._setup_llm_provider()
@@ -166,54 +167,88 @@ class ZerePyAgent:
         logger.info("Press Ctrl+C at any time to stop the loop.")
         print_h_bar()
 
-        time.sleep(2)
+        await asyncio.sleep(2)
         logger.info("Starting loop in 5 seconds...")
         for i in range(5, 0, -1):
             logger.info(f"{i}...")
-            time.sleep(1)
+            await asyncio.sleep(1)
 
         try:
             while True:
-                success = False
                 try:
-                    # REPLENISH INPUTS
-                    # TODO: Add more inputs to complexify agent behavior
-                    if "timeline_tweets" not in self.state or self.state["timeline_tweets"] is None or len(self.state["timeline_tweets"]) == 0:
-                        if any("tweet" in task["name"] for task in self.tasks):
-                            logger.info("\n👀 READING TIMELINE")
-                            self.state["timeline_tweets"] = self.connection_manager.perform_action(
-                                connection_name="twitter",
-                                action_name="read-timeline",
-                                params=[]
-                            )
-
-                    if "room_info" not in self.state or self.state["room_info"] is None:
-                        if any("echochambers" in task["name"] for task in self.tasks):
-                            logger.info("\n👀 READING ECHOCHAMBERS ROOM INFO")
-                            self.state["room_info"] = self.connection_manager.perform_action(
-                                connection_name="echochambers",
-                                action_name="get-room-info",
-                                params={}
-                            )
-
-                    # CHOOSE AN ACTION
-                    # TODO: Add agentic action selection
+                    # Replenish inputs with proper error handling
+                    await self._replenish_inputs()
                     
-                    action = self.select_action(use_time_based_weights=self.use_time_based_weights)
-                    action_name = action["name"]
+                    # Select and execute action
+                    action = self.select_action(
+                        use_time_based_weights=self.use_time_based_weights
+                    )
+                    success = await self._execute_action_with_retry(action)
 
-                    # PERFORM ACTION
-                    success = execute_action(self, action_name)
-
-                    logger.info(f"\n⏳ Waiting {self.loop_delay} seconds before next loop...")
+                    # Wait before next iteration
+                    delay = self.loop_delay if success else self.error_delay
+                    logger.info(f"\n⏳ Waiting {delay} seconds before next loop...")
                     print_h_bar()
-                    time.sleep(self.loop_delay if success else 60)
+                    await asyncio.sleep(delay)
 
                 except Exception as e:
                     logger.error(f"\n❌ Error in agent loop iteration: {e}")
-                    logger.info(f"⏳ Waiting {self.loop_delay} seconds before retrying...")
-                    time.sleep(self.loop_delay)
+                    logger.info(f"⏳ Waiting {self.error_delay} seconds before retrying...")
+                    await asyncio.sleep(self.error_delay)
 
         except KeyboardInterrupt:
             logger.info("\n🛑 Agent loop stopped by user.")
-            return
+        finally:
+            await self._cleanup()
+            
+    async def _replenish_inputs(self):
+        """Replenish agent state with required inputs"""
+        # Replenish Twitter timeline
+        if (
+            "timeline_tweets" not in self.state 
+            or not self.state["timeline_tweets"]
+            or len(self.state["timeline_tweets"]) == 0
+        ):
+            if any("tweet" in task["name"] for task in self.tasks):
+                logger.info("\n👀 READING TIMELINE")
+                self.state["timeline_tweets"] = await self.connection_manager.perform_action(
+                    connection_name="twitter",
+                    action_name="read-timeline",
+                    params=[]
+                )
+
+        # Replenish Echochambers room info
+        if "room_info" not in self.state or self.state["room_info"] is None:
+            if any("echochambers" in task["name"] for task in self.tasks):
+                logger.info("\n👀 READING ECHOCHAMBERS ROOM INFO")
+                self.state["room_info"] = await self.connection_manager.perform_action(
+                    connection_name="echochambers",
+                    action_name="get-room-info",
+                    params={}
+                )
+                
+    async def _execute_action_with_retry(self, action: dict) -> bool:
+        """Execute an action with retry logic"""
+        try:
+            return await execute_action(self, action["name"])
+        except Exception as e:
+            logger.error(f"Action execution failed: {e}")
+            return False
+            
+    async def _cleanup(self):
+        """Clean up agent resources"""
+        try:
+            # Clear agent state
+            self.state.clear()
+            
+            # Clean up connection manager
+            if hasattr(self, 'connection_manager'):
+                self.connection_manager._cleanup_connections()
+                
+        except Exception as e:
+            logger.error(f"Error during agent cleanup: {e}")
+            
+    def __del__(self):
+        """Ensure cleanup on deletion"""
+        if hasattr(self, 'connection_manager'):
+            self.connection_manager._cleanup_connections()

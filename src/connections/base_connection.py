@@ -31,15 +31,43 @@ class Action:
 class BaseConnection(ABC):
     def __init__(self, config):
         try:
+            # Connection state tracking
+            self._initialized = False
+            self._closed = False
+            
             # Dictionary to store action name -> handler method mapping
             self.actions: Dict[str, Callable] = {}
             # Dictionary to store some essential configuration
-            self.config = self.validate_config(config) 
-            # Register actions during initialization
-            self.register_actions()
+            self.config = self.validate_config(config)
+            
+            # Initialize connection
+            self._setup()
+            self._initialized = True
         except Exception as e:
             logging.error("Could not initialize the connection")
-            raise e
+            self._cleanup()
+            raise ConnectionError(f"Failed to initialize connection: {e}")
+    
+    def _setup(self):
+        """Initialize connection resources and register actions"""
+        try:
+            self.register_actions()
+        except Exception as e:
+            raise ConnectionError(f"Failed to setup connection: {e}")
+    
+    def _cleanup(self):
+        """Clean up connection resources"""
+        if not self._closed:
+            try:
+                self.actions.clear()
+                self._closed = True
+            except Exception as e:
+                logging.error(f"Error during connection cleanup: {e}")
+    
+    def __del__(self):
+        """Ensure resources are cleaned up on deletion"""
+        if not self._closed:
+            self._cleanup()
 
     @property
     @abstractmethod

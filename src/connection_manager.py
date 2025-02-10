@@ -1,6 +1,7 @@
 import logging
 from typing import Any, List, Optional, Type, Dict
 from src.connections.base_connection import BaseConnection
+from src.event_bus import EventBus, Event
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
 from src.connections.goat_connection import GoatConnection
@@ -26,8 +27,26 @@ logger = logging.getLogger("connection_manager")
 class ConnectionManager:
     def __init__(self, agent_config):
         self.connections: Dict[str, BaseConnection] = {}
+        self._event_bus = EventBus()
+        self._setup_connections(agent_config)
+        
+    def _setup_connections(self, agent_config):
+        """Initialize all connections with proper error handling"""
         for config in agent_config:
-            self._register_connection(config)
+            try:
+                self._register_connection(config)
+            except Exception as e:
+                self._cleanup_connections()
+                raise ConnectionError(f"Failed to initialize connections: {e}")
+                
+    def _cleanup_connections(self):
+        """Clean up all connection resources"""
+        for name, connection in self.connections.items():
+            try:
+                connection._cleanup()
+            except Exception as e:
+                logging.error(f"Error cleaning up connection {name}: {e}")
+        self.connections.clear()
 
     @staticmethod
     def _class_name_to_type(class_name: str) -> Type[BaseConnection]:
@@ -160,33 +179,42 @@ class ConnectionManager:
         except Exception as e:
             logging.error(f"\nAn error occurred: {e}")
 
-    def perform_action(
+    async def perform_action(
         self, connection_name: str, action_name: str, params: List[Any]
     ) -> Optional[Any]:
-        """Perform an action on a specific connection with given parameters"""
+        """
+        Perform an action on a specific connection with given parameters
+        
+        Args:
+            connection_name: Name of the connection to use
+            action_name: Name of the action to perform
+            params: List of parameters for the action
+            
+        Returns:
+            Result of the action or None if it fails
+            
+        Raises:
+            ConnectionError: If connection is not configured or action fails
+        """
         try:
             connection = self.connections[connection_name]
 
             if not connection.is_configured():
-                logging.error(
-                    f"\nError: Connection '{connection_name}' is not configured"
-                )
-                return None
+                raise ConnectionError(f"Connection '{connection_name}' is not configured")
 
             if action_name not in connection.actions:
-                logging.error(
-                    f"\nError: Unknown action '{action_name}' for connection '{connection_name}'"
+                raise ConnectionError(
+                    f"Unknown action '{action_name}' for connection '{connection_name}'"
                 )
-                return None
 
             action = connection.actions[action_name]
 
-            # Convert list of params to kwargs dictionary, handling both required and optional params
+            # Convert list of params to kwargs dictionary
             kwargs = {}
             param_index = 0
 
             # Add provided parameters up to the number provided
-            for i, param in enumerate(action.parameters):
+            for param in action.parameters:
                 if param_index < len(params):
                     kwargs[param.name] = params[param_index]
                     param_index += 1
@@ -199,18 +227,43 @@ class ConnectionManager:
             ]
 
             if missing_required:
-                logging.error(
-                    f"\nError: Missing required parameters: {', '.join(missing_required)}"
+                raise ValueError(
+                    f"Missing required parameters: {', '.join(missing_required)}"
                 )
-                return None
 
-            return connection.perform_action(action_name, kwargs)
+            # Publish action start event
+            await self._event_bus.publish(Event(
+                name=f"{connection_name}.{action_name}.start",
+                data={"params": kwargs},
+                source="connection_manager"
+            ))
+
+            try:
+                result = connection.perform_action(action_name, kwargs)
+                
+                # Publish action success event
+                await self._event_bus.publish(Event(
+                    name=f"{connection_name}.{action_name}.success",
+                    data={"result": result},
+                    source="connection_manager"
+                ))
+                
+                return result
+                
+            except Exception as e:
+                # Publish action failure event
+                await self._event_bus.publish(Event(
+                    name=f"{connection_name}.{action_name}.failure",
+                    data={"error": str(e)},
+                    source="connection_manager"
+                ))
+                raise
 
         except Exception as e:
             logging.error(
-                f"\nAn error occurred while trying action {action_name} for {connection_name} connection: {e}"
+                f"Error performing action {action_name} for {connection_name}: {e}"
             )
-            return None
+            raise ConnectionError(str(e))
 
     def get_model_providers(self) -> List[str]:
         """Get a list of all LLM provider connections"""

@@ -10,7 +10,8 @@ from dotenv import set_key, load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 from src.helpers import print_h_bar
 from src.action_handler import register_action
-from goat import PluginBase, ToolBase, WalletClientBase, get_tools
+from goat.classes.plugin_base import PluginBase
+from goat import ToolBase, WalletClientBase, get_tools
 from goat_wallets.web3 import Web3EVMWalletClient
 
 logger = logging.getLogger("connections.goat_connection")

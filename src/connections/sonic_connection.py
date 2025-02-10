@@ -257,7 +257,7 @@ class SonicConnection(BaseConnection):
 
             # Log and return explorer link immediately
             tx_link = self._get_explorer_link(tx_hash.hex())
-            return f"\n⛓️ Transfer transaction sent: {tx_link}"
+            return f"⛓️ Transfer transaction sent: {tx_link}"
 
         except Exception as e:
             logger.error(f"Transfer failed: {e}")
@@ -433,7 +433,7 @@ class SonicConnection(BaseConnection):
             
             # Log and return explorer link immediately
             tx_link = self._get_explorer_link(tx_hash.hex())
-            return f"\n🔄 Swap transaction sent: {tx_link}"
+            return f"🔄 Swap transaction sent: {tx_link}"
                 
         except Exception as e:
             logger.error(f"Swap failed: {e}")

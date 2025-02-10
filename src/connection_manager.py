@@ -4,6 +4,7 @@ from src.connections.base_connection import BaseConnection
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
 from src.connections.goat_connection import GoatConnection
+from src.connections.groq_connection import GroqConnection
 from src.connections.openai_connection import OpenAIConnection
 from src.connections.twitter_connection import TwitterConnection
 from src.connections.farcaster_connection import FarcasterConnection
@@ -18,6 +19,7 @@ from src.connections.allora_connection import AlloraConnection
 from src.connections.debridge_connection import DeBridgeConnection
 from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
+from src.connections.together_connection import TogetherAIConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -38,6 +40,8 @@ class ConnectionManager:
             return OpenAIConnection
         elif class_name == "farcaster":
             return FarcasterConnection
+        elif class_name == "groq":
+            return GroqConnection
         elif class_name == "eternalai":
             return EternalAIConnection
         elif class_name == "ollama":
@@ -64,6 +68,8 @@ class ConnectionManager:
             return XAIConnection
         elif class_name == "ethereum":
             return EthereumConnection
+        elif class_name == "together":
+            return TogetherAIConnection
         return None
 
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:

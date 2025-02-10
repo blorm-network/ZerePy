@@ -181,7 +181,7 @@ class DiscordConnection(BaseConnection):
         setup_instructions = [
             "\n📝 Discord AUTHENTICATION SETUP",
             "\nℹ️ To get your Discord API credentials:",
-            "1. Follow Discord's API documention here: https://www.postman.com/discord-api/discord-api/collection/0d7xls9/discord-rest-api",
+            "1. Follow Discord's API documentation here: https://www.postman.com/discord-api/discord-api/collection/0d7xls9/discord-rest-api",
             "2. Copy the Discod token generated during the setup.",
         ]
         logger.info("\n".join(setup_instructions))

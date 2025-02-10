@@ -2,6 +2,7 @@ import sys
 import json
 import logging
 import os
+import shlex
 from dataclasses import dataclass
 from typing import Callable, Dict, List
 from pathlib import Path
@@ -242,7 +243,12 @@ class ZerePyCLI:
 
     def _handle_command(self, input_string: str) -> None:
         """Parse and handle a command input"""
-        input_list = input_string.split()
+        try:
+            input_list = shlex.split(input_string)
+        except ValueError as e:
+            logger.error(f"Error parsing command: {e}")
+            return
+
         command_string = input_list[0].lower()
 
         try:

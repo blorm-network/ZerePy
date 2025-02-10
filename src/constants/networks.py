@@ -6,8 +6,12 @@ SONIC_NETWORKS = {
     "testnet": {
         "rpc_url": "https://rpc.blaze.soniclabs.com",
         "scanner_url": "https://testnet.sonicscan.org"
+    },
+    "custom": {
+        "rpc_url": "placeholder",
+        "scanner_url": "https://sonicscan.org"
+        }
     }
-}
 
 EVM_NETWORKS = {
     "ethereum": {

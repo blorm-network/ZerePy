@@ -38,6 +38,8 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 - Galadriel
 - Allora
 - xAI (Grok)
+- GROQ API
+- Together AI
 
 ## Quickstart
 
@@ -53,7 +55,7 @@ https://replit.com/@blormdev/ZerePy?v=1
 
 System:
 
-- Python 3.10 or higher
+- Python 3.11 or higher
 - Poetry 1.5 or higher
 
 Environment Variables:
@@ -64,6 +66,8 @@ Environment Variables:
   - EternalAI: https://eternalai.oerg/api
   - Hyperbolic: https://app.hyperbolic.xyz
   - Galadriel: https://dashboard.galadriel.com
+  - GROQ: https://console.groq.com/
+  - Together AI: https://api.together.xyz
 - Social (based on your needs):
   - X API: https://developer.x.com/en/docs/authentication/oauth-1-0a/api-key-and-secret
   - Farcaster: Warpcast recovery phrase
@@ -133,6 +137,8 @@ poetry run python main.py
    configure-connection xai        # For Grok
    configure-connection allora     # For Allora
    configure-connection hyperbolic # For Hyperbolic
+   configure-connection groq       # For GROQ
+   configure-connection together   # For Together AI
    ```
 
 2. Use `list-connections` to see all available connections and their status

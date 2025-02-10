@@ -430,4 +430,4 @@ Use `help` in the CLI to see all available commands. Key commands include:
 
 ---
 
-Made with ♥ @Blorm.xyz
+Made with ♥ @Blorm.xyz.

@@ -1,11 +1,13 @@
 import logging
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, cast, Set, Deque
 from collections import deque
 
 import requests
 from dotenv import load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.types.connections import EchoChamberConfig
+from src.types.config import BaseConnectionConfig
 
 logger = logging.getLogger("connections.echochambers_connection")
 
@@ -22,29 +24,39 @@ class EchochambersAPIError(EchochambersConnectionError):
     pass
 
 class EchochambersConnection(BaseConnection):
+    api_url: str
+    api_key: str
+    room: str
+    sender_username: str
+    sender_model: str
+    history_read_count: int
+    post_history_track: int
+    message_queue: List[Dict[str, Any]]
+    processed_messages: Set[str]
+    max_queue_size: int
+    sent_messages: Deque[Dict[str, Any]]
+    metrics: Dict[str, Any]
+    
     def __init__(self, config: Dict[str, Any]):
         logger.info("✨ Initializing Echochambers adapter")
-        super().__init__(config)
+        # Validate config before passing to super
+        validated_config = EchoChamberConfig(**config)
+        super().__init__(validated_config)
 
-        self.api_url = config.get("api_url")
-        self.api_key = config.get("api_key")
-        self.room = config.get("room")
-        self.sender_username = config.get("sender_username")
-        self.sender_model = config.get("sender_model")
-        self.history_read_count = config.get("history_read_count")
-        self.post_history_track = config.get("post_history_track")
-
-        # Validate essential configurations
-        if not all([self.api_url, self.api_key, self.room, self.sender_username, self.sender_model, self.history_read_count, self.post_history_track]):
-            missing = [k for k in ["api_url", "api_key", "room", "sender_username", "sender_model", "history_read_count", "post_history_track"]
-                       if not getattr(self, k)]
-            raise EchochambersConfigurationError(f"Missing configuration fields: {', '.join(missing)}")
+        # Set configuration values
+        self.api_url = validated_config.api_url
+        self.api_key = validated_config.api_key
+        self.room = validated_config.room
+        self.sender_username = validated_config.sender_username
+        self.sender_model = validated_config.sender_model
+        self.history_read_count = validated_config.history_read_count
+        self.post_history_track = validated_config.post_history_track
 
         logger.info(f"✨ Connected to: {self.api_url}")
         logger.info(f"✨ Entered room: {self.room}")
 
         # Initialize message queue and tracking
-        self.message_queue: List[Dict[str, Any]] = []
+        self.message_queue = []
         self.processed_messages = set()
         self.max_queue_size = 100
         
@@ -67,50 +79,23 @@ class EchochambersConnection(BaseConnection):
     def is_llm_provider(self) -> bool:
         return False
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Echochambers configuration from JSON"""
-        required_fields = ["api_url", "api_key", "room", "history_read_count", "sender_username", "sender_model"]
-        missing_fields = [field for field in required_fields if not config.get(field)]
-        if missing_fields:
-            raise ValueError(f"Missing required configuration fields: {', '.join(missing_fields)}")
-
-        if not isinstance(config["history_read_count"], int) or config["history_read_count"] <= 0:
-            raise ValueError("history_read_count must be a positive integer")
-
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate Echochambers configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = EchoChamberConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid Echochambers configuration: {str(e)}")
 
     def register_actions(self) -> None:
         """Register available Echochambers actions"""
-        actions = [
-            Action(
-                name="get-room-info",
-                description="Get information about the current room including topic and tags",
-                parameters=[]
-            ),
-            Action(
-                name="get-room-history",
-                description="Get message history from the Echochambers room",
-                parameters=[]
-            ),
-            Action(
-                name="send-message",
-                description="Send a message to the Echochambers room",
-                parameters=[
-                    ActionParameter(
-                        name="content",
-                        description="The message content to send",
-                        required=True,
-                        type=str
-                    )
-                ]
-            ),
-            Action(
-                name="process-room-history",
-                description="Process and queue messages for replies",
-                parameters=[]
-            )
-        ]
-        self.actions = {action.name: action for action in actions}
+        self.actions = {
+            "get-room-info": self.get_room_info,
+            "get-room-history": self.get_room_history,
+            "send-message": self.send_message,
+            "process-room-history": self.process_room_history
+        }
 
     def get_room_info(self) -> Dict[str, Any]:
         """Get information about the current room by listing all rooms and finding ours"""
@@ -201,7 +186,7 @@ class EchochambersConnection(BaseConnection):
             self._handle_error("Failed to process room history", e)
             raise
 
-    def _make_request(self, method: str, url: str, **kwargs) -> Any:
+    def _make_request(self, method: str, url: str, **kwargs: Any) -> Dict[str, Any]:
         """Make HTTP request with retries and error handling"""
         headers = {
             "Content-Type": "application/json",
@@ -227,6 +212,7 @@ class EchochambersConnection(BaseConnection):
                     raise EchochambersAPIError(f"Failed after 3 attempts: {str(e)}")
                 logger.warning(f"Attempt {attempt + 1} failed: {str(e)}")
                 time.sleep(2 ** attempt)
+        raise EchochambersAPIError("Request failed after all retries")
 
     def _handle_error(self, message: str, error: Exception) -> None:
         """Handle and log errors"""
@@ -253,7 +239,7 @@ class EchochambersConnection(BaseConnection):
 
             self.metrics['last_metrics_log'] = current_time
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure the Echochambers connection"""
         logger.info("Configuring Echochambers connection")
         try:
@@ -284,19 +270,12 @@ class EchochambersConnection(BaseConnection):
                 logger.error(f"Echochambers connection test failed: {str(e)}")
             return False
 
-    def perform_action(self, action_name: str, kwargs) -> Any:
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
         """Execute an Echochambers action with validation"""
-        action = self.actions.get(action_name)
-        if not action:
+        if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
 
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
-
+        # Call the appropriate method based on action name
         method_name = action_name.replace('-', '_')
-        method = getattr(self, method_name, None)
-        if method:
-            return method(**kwargs)
-        else:
-            raise NotImplementedError(f"The action '{action_name}' is not implemented.")
+        method = getattr(self, method_name)
+        return method(**kwargs)

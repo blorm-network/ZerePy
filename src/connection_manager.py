@@ -1,6 +1,7 @@
 import logging
-from typing import Any, List, Optional, Type, Dict
+from typing import Any, List, Optional, Type, Dict, Union, cast
 from src.connections.base_connection import BaseConnection
+from src.types.config import BaseConnectionConfig
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
 from src.connections.goat_connection import GoatConnection
@@ -69,19 +70,26 @@ class ConnectionManager:
             return TogetherAIConnection
         return None
 
-    def _register_connection(self, config_dic: Dict[str, Any]) -> None:
+    def _register_connection(self, config: Union[Dict[str, Any], BaseConnectionConfig]) -> None:
         """
         Create and register a new connection with configuration
 
         Args:
-            name: Identifier for the connection
-            connection_class: The connection class to instantiate
-            config: Configuration dictionary for the connection
+            config: Either a configuration dictionary or a BaseConnectionConfig instance
         """
         try:
-            name = config_dic["name"]
+            # Handle both dict and BaseConnectionConfig inputs
+            if isinstance(config, dict):
+                name = config["name"]
+            else:
+                name = config.name
+
             connection_class = self._class_name_to_type(name)
-            connection = connection_class(config_dic)
+            if not connection_class:
+                raise ValueError(f"Unknown connection type: {name}")
+
+            # Pass config directly - connection classes handle validation
+            connection = connection_class(config)
             self.connections[name] = connection
         except Exception as e:
             logging.error(f"Failed to initialize connection {name}: {e}")

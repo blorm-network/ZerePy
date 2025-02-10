@@ -9,6 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 python-dotenv = "^1.0.1"
+pydantic = "^2.5.3"
 openai = "^1.57.2"
 prompt-toolkit = "^3.0.48"
 anthropic = "^0.42.0"
@@ -31,6 +32,18 @@ uvicorn = { version = "^0.27.0", optional = true }
 
 [tool.poetry.extras]
 server = ["fastapi", "uvicorn", "requests"]
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.15.0"
+types-requests = "^2.32.0.20241016"
+types-requests-oauthlib = "^2.0.0.20250119"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+check_untyped_defs = true
+disallow_untyped_defs = true
 
 [build-system]
 requires = ["poetry-core"]

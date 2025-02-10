@@ -2,13 +2,15 @@ import logging
 import os
 import time
 import requests
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, cast
 from dotenv import load_dotenv, set_key
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from src.constants.networks import EVM_NETWORKS
 from src.constants.abi import ERC20_ABI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.types.connections import EthereumConfig
+from src.types.config import BaseConnectionConfig
 
 logger = logging.getLogger("connections.ethereum_connection")
 
@@ -17,21 +19,28 @@ class EthereumConnectionError(Exception):
     pass
 
 class EthereumConnection(BaseConnection):
+    _web3: Optional[Web3]
+    NATIVE_TOKEN: str = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+    network: str
+    rpc_url: str
+    scanner_url: str
+    chain_id: int
+    aggregator_api: str
+    
     def __init__(self, config: Dict[str, Any]):
         logger.info("Initializing Ethereum connection...")
         self._web3 = None
-        self.NATIVE_TOKEN = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+        
+        # Validate config before passing to super
+        validated_config = EthereumConfig(**config)
         
         # Get network configuration
         self.network = "ethereum"  # Default to ethereum mainnet
-        self.rpc_url = config.get("rpc")  # Get RPC from config
-        if not self.rpc_url:
-            self.rpc_url = EVM_NETWORKS[self.network]["rpc_url"]
-            
+        self.rpc_url = validated_config.rpc or EVM_NETWORKS[self.network]["rpc_url"]
         self.scanner_url = EVM_NETWORKS[self.network]["scanner_url"]
         self.chain_id = EVM_NETWORKS[self.network]["chain_id"]
         
-        super().__init__(config)
+        super().__init__(validated_config)
         self._initialize_web3()
         
         # Kyberswap aggregator API for best swap routes
@@ -69,57 +78,26 @@ class EthereumConnection(BaseConnection):
     def is_llm_provider(self) -> bool:
         return False
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Ethereum configuration from JSON"""
-        if "rpc" not in config and "network" not in config:
-            raise ValueError("Config must contain either 'rpc' or 'network'")
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate Ethereum configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = EthereumConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid Ethereum configuration: {str(e)}")
 
     def register_actions(self) -> None:
         """Register available Ethereum actions"""
         self.actions = {
-            "get-token-by-ticker": Action(
-                name="get-token-by-ticker",
-                parameters=[
-                    ActionParameter("ticker", True, str, "Token ticker symbol to look up")
-                ],
-                description="Get token address by ticker symbol"
-            ),
-            "get-balance": Action(
-                name="get-balance",
-                parameters=[
-                    ActionParameter("address", False, str, "Address to check balance for (optional)"),
-                    ActionParameter("token_address", False, str, "Token address (optional, native token if not provided)")
-                ],
-                description="Get ETH or token balance"
-            ),
-            "transfer": Action(
-                name="transfer", 
-                parameters=[
-                    ActionParameter("to_address", True, str, "Recipient address"),
-                    ActionParameter("amount", True, float, "Amount to transfer"),
-                    ActionParameter("token_address", False, str, "Token address (optional, native token if not provided)")
-                ],
-                description="Send ETH or tokens"
-            ),
-            "get-address": Action(
-            name="get-address",
-            parameters=[],
-            description="Get your Ethereum wallet address"
-            ),
-            "swap": Action(
-                name="swap",
-                parameters=[
-                    ActionParameter("token_in", True, str, "Input token address"),
-                    ActionParameter("token_out", True, str, "Output token address"),
-                    ActionParameter("amount", True, float, "Amount to swap"),
-                    ActionParameter("slippage", False, float, "Max slippage percentage (default 0.5%)")
-                ],
-                description="Swap tokens using Kyberswap aggregator"
-            )
+            "get-token-by-ticker": self.get_token_by_ticker,
+            "get-balance": self.get_balance,
+            "transfer": self.transfer,
+            "get-address": self.get_address,
+            "swap": self.swap
         }
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Sets up Ethereum wallet and API credentials"""
         logger.info("\n⛓️ ETHEREUM SETUP")
         
@@ -260,7 +238,7 @@ class EthereumConnection(BaseConnection):
                 Web3.to_checksum_address(address)
             ).call()
             decimals = contract.functions.decimals().call()
-            return balanqce / (10 ** decimals)
+            return balance / (10 ** decimals)
         else:
             # Get native ETH balance
             balance = self._web3.eth.get_balance(Web3.to_checksum_address(address))
@@ -628,8 +606,8 @@ class EthereumConnection(BaseConnection):
         except Exception as e:
             return f"Swap failed: {str(e)}"
 
-    def perform_action(self, action_name: str, kwargs: Dict[str, Any]) -> Any:
-        """Execute an Ethereum action with validation"""
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
+        """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
 
@@ -638,11 +616,7 @@ class EthereumConnection(BaseConnection):
         if not self.is_configured(verbose=True):
             raise EthereumConnectionError("Ethereum connection is not properly configured")
 
-        action = self.actions[action_name]
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
-
+        # Call the appropriate method based on action name
         method_name = action_name.replace('-', '_')
         method = getattr(self, method_name)
         return method(**kwargs)

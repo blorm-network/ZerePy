@@ -1,10 +1,12 @@
 import os
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, cast
 from dotenv import set_key, load_dotenv
 from farcaster import Warpcast
 from farcaster.models import CastContent, CastHash, IterableCastsResult, Parent, ReactionsPutResult
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.types.connections import FarcasterConfig
+from src.types.config import BaseConnectionConfig
 
 logger = logging.getLogger("connections.farcaster_connection")
 
@@ -21,62 +23,63 @@ class FarcasterAPIError(FarcasterConnectionError):
     pass
 
 class FarcasterConnection(BaseConnection):
+    _client: Optional[Warpcast]
+    
     def __init__(self, config: Dict[str, Any]):
         logger.info("Initializing Farcaster connection...")
-        super().__init__(config)
-        self._client: Warpcast = None
+        # Validate config before passing to super
+        validated_config = FarcasterConfig(**config)
+        super().__init__(validated_config)
+        self._client = None
 
     @property
     def is_llm_provider(self) -> bool:
         return False
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Farcaster configuration from JSON"""
-        required_fields = ["timeline_read_count", "cast_interval"]
-        missing_fields = [field for field in required_fields if field not in config]
-        
-        if missing_fields:
-            raise ValueError(f"Missing required configuration fields: {', '.join(missing_fields)}")
-            
-        if not isinstance(config["timeline_read_count"], int) or config["timeline_read_count"] <= 0:
-            raise ValueError("timeline_read_count must be a positive integer")
-
-        if not isinstance(config["cast_interval"], int) or config["cast_interval"] <= 0:
-            raise ValueError("cast_interval must be a positive integer")
-            
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate Farcaster configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = FarcasterConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid Farcaster configuration: {str(e)}")
 
     def register_actions(self) -> None:
         """Register available Farcaster actions"""
         self.actions = {
             "get-latest-casts": Action(
                 name="get-latest-casts",
+                method=self.get_latest_casts,
                 parameters=[
                     ActionParameter("fid", True, int, "Farcaster ID of the user"),
                     ActionParameter("cursor", False, int, "Cursor, defaults to None"),
-                    ActionParameter("limit", False, int, "Number of casts to read, defaults to 25, otherwise min(limit, 100)")
+                    ActionParameter("limit", False, int, "Number of casts to read, defaults to 25")
                 ],
                 description="Get the latest casts from a user"
             ),
             "post-cast": Action(
                 name="post-cast",
+                method=self.post_cast,
                 parameters=[
                     ActionParameter("text", True, str, "Text content of the cast"),
                     ActionParameter("embeds", False, List[str], "List of embeds, defaults to None"),
-                    ActionParameter("channel_key", False, str, "Channel key, defaults to None"),
+                    ActionParameter("channel_key", False, str, "Channel key, defaults to None")
                 ],
                 description="Post a new cast"
             ),
             "read-timeline": Action(
                 name="read-timeline",
+                method=self.read_timeline,
                 parameters=[
                     ActionParameter("cursor", False, int, "Cursor, defaults to None"),
-                    ActionParameter("limit", False, int, "Number of casts to read from timeline, defaults to 100")
+                    ActionParameter("limit", False, int, "Number of casts to read, defaults to 100")
                 ],
                 description="Read all recent casts"
             ),
             "like-cast": Action(
                 name="like-cast",
+                method=self.like_cast,
                 parameters=[
                     ActionParameter("cast_hash", True, str, "Hash of the cast to like")
                 ],
@@ -84,6 +87,7 @@ class FarcasterConnection(BaseConnection):
             ),
             "requote-cast": Action(
                 name="requote-cast",
+                method=self.requote_cast,
                 parameters=[
                     ActionParameter("cast_hash", True, str, "Hash of the cast to requote")
                 ],
@@ -91,17 +95,19 @@ class FarcasterConnection(BaseConnection):
             ),
             "reply-to-cast": Action(
                 name="reply-to-cast",
+                method=self.reply_to_cast,
                 parameters=[
                     ActionParameter("parent_fid", True, int, "Farcaster ID of the parent cast to reply to"),
                     ActionParameter("parent_hash", True, str, "Hash of the parent cast to reply to"),
                     ActionParameter("text", True, str, "Text content of the cast"),
                     ActionParameter("embeds", False, List[str], "List of embeds, defaults to None"),
-                    ActionParameter("channel_key", False, str, "Channel of the cast, defaults to None"),
+                    ActionParameter("channel_key", False, str, "Channel key, defaults to None")
                 ],
                 description="Reply to a cast"
             ),
             "get-cast-replies": Action(
-                name="get-cast-replies", # get_all_casts_in_thread
+                name="get-cast-replies",
+                method=self.get_cast_replies,
                 parameters=[
                     ActionParameter("thread_hash", True, str, "Hash of the thread to query for replies")
                 ],
@@ -118,14 +124,15 @@ class FarcasterConnection(BaseConnection):
             'FARCASTER_MNEMONIC': 'recovery phrase',
         }
 
-        credentials = {}
+        credentials: Dict[str, str] = {}
         missing = []
 
         for env_var, description in required_vars.items():
             value = os.getenv(env_var)
             if not value:
                 missing.append(description)
-            credentials[env_var] = value
+            else:
+                credentials[env_var] = value
 
         if missing:
             error_msg = f"Missing Farcaster credentials: {', '.join(missing)}"
@@ -134,7 +141,7 @@ class FarcasterConnection(BaseConnection):
         logger.debug("All required credentials found")
         return credentials
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Sets up Farcaster bot authentication"""
         logger.info("\nStarting Farcaster authentication setup")
 
@@ -172,13 +179,15 @@ class FarcasterConnection(BaseConnection):
             logger.error(f"❌ Configuration failed: {e}")
             return False
 
-    def is_configured(self, verbose = False) -> bool:
+    def is_configured(self, verbose: bool = False) -> bool:
         """Check if Farcaster credentials are configured and valid"""
         logger.debug("Checking Farcaster configuration status")
         try:
             credentials = self._get_credentials()
 
             self._client = Warpcast(mnemonic=credentials['FARCASTER_MNEMONIC'])
+            if self._client is None:
+                return False
 
             self._client.get_me()
             logger.debug("Farcaster configuration is valid")
@@ -194,64 +203,82 @@ class FarcasterConnection(BaseConnection):
                 logger.error(f"Configuration validation failed: {error_msg}")
             return False
     
-    def perform_action(self, action_name: str, kwargs) -> Any:
-        """Execute a Farcaster action with validation"""
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
+        """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
 
-        action = self.actions[action_name]
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
-
         # Add config parameters if not provided
         if action_name == "read-timeline" and "count" not in kwargs:
-            kwargs["count"] = self.config["timeline_read_count"]
+            config = cast(FarcasterConfig, self.config)
+            kwargs["count"] = config.timeline_read_count
 
         # Call the appropriate method based on action name
         method_name = action_name.replace('-', '_')
         method = getattr(self, method_name)
         return method(**kwargs)
     
-    def get_latest_casts(self, fid: int, cursor: Optional[int] = None, limit: Optional[int] = 25) -> IterableCastsResult:
+    def get_latest_casts(self, fid: int, cursor: Optional[str] = None, limit: int = 25) -> IterableCastsResult:
         """Get the latest casts from a user"""
         logger.debug(f"Getting latest casts for {fid}, cursor: {cursor}, limit: {limit}")
 
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
+
         casts = self._client.get_casts(fid, cursor, limit)
-        logger.debug(f"Retrieved {len(casts)} casts")
+        if not isinstance(casts, IterableCastsResult):
+            raise FarcasterAPIError("Unexpected response type")
         return casts
 
     def post_cast(self, text: str, embeds: Optional[List[str]] = None, channel_key: Optional[str] = None) -> CastContent:
         """Post a new cast"""
         logger.debug(f"Posting cast: {text}, embeds: {embeds}")
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
         return self._client.post_cast(text, embeds, None, channel_key)
 
 
-    def read_timeline(self, cursor: Optional[int] = None, limit: Optional[int] = 100) -> IterableCastsResult:
+    def read_timeline(self, cursor: Optional[str] = None, limit: int = 100) -> IterableCastsResult:
         """Read all recent casts"""
         logger.debug(f"Reading timeline, cursor: {cursor}, limit: {limit}")
-        return self._client.get_recent_casts(cursor, limit)
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
+        casts = self._client.get_recent_casts(cursor, limit)
+        if not isinstance(casts, IterableCastsResult):
+            raise FarcasterAPIError("Unexpected response type")
+        return casts
 
     def like_cast(self, cast_hash: str) -> ReactionsPutResult:
         """Like a specific cast"""
         logger.debug(f"Liking cast: {cast_hash}")
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
         return self._client.like_cast(cast_hash)
     
     def requote_cast(self, cast_hash: str) -> CastHash:
         """Requote a cast (recast)"""
         logger.debug(f"Requoting cast: {cast_hash}")
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
         return self._client.recast(cast_hash)
 
     def reply_to_cast(self, parent_fid: int, parent_hash: str, text: str, embeds: Optional[List[str]] = None, channel_key: Optional[str] = None) -> CastContent:
         """Reply to an existing cast"""
         logger.debug(f"Replying to cast: {parent_hash}, text: {text}")
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
         parent = Parent(fid=parent_fid, hash=parent_hash)
         return self._client.post_cast(text, embeds, parent, channel_key)
     
     def get_cast_replies(self, thread_hash: str) -> IterableCastsResult:
         """Fetch cast replies (thread)"""
         logger.debug(f"Fetching replies for thread: {thread_hash}")
-        return self._client.get_all_casts_in_thread(thread_hash)
+        if self._client is None:
+            raise FarcasterConnectionError("Client not initialized")
+        casts = self._client.get_all_casts_in_thread(thread_hash)
+        if not isinstance(casts, IterableCastsResult):
+            raise FarcasterAPIError("Unexpected response type")
+        return casts
     
     # "reply-to-cast": Action(
     #     name="reply-to-cast",

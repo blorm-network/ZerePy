@@ -1,10 +1,12 @@
 import logging
 import os
 import json
-from typing import Dict, Any
+from typing import Dict, Any, Optional, cast
 from dotenv import load_dotenv, set_key
 from openai import OpenAI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.types.connections import EternalAIConfig
+from src.types.config import BaseConnectionConfig
 from web3 import Web3
 import requests
 
@@ -30,51 +32,34 @@ class EternalAIAPIError(EternalAIConnectionError):
 
 
 class EternalAIConnection(BaseConnection):
+    _client: Optional[OpenAI]
+    
     def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+        logger.info("Initializing EternalAI connection...")
+        # Validate config before passing to super
+        validated_config = EternalAIConfig(**config)
+        super().__init__(validated_config)
         self._client = None
 
     @property
     def is_llm_provider(self) -> bool:
         return True
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate EternalAI configuration from JSON"""
-        required_fields = ["model"]
-        missing_fields = [field for field in required_fields if field not in config]
-
-        if missing_fields:
-            raise ValueError(f"Missing required configuration fields: {', '.join(missing_fields)}")
-
-        if not isinstance(config["model"], str):
-            raise ValueError("model must be a string")
-
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate EternalAI configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = EternalAIConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid EternalAI configuration: {str(e)}")
 
     def register_actions(self) -> None:
         """Register available EternalAI actions"""
         self.actions = {
-            "generate-text": Action(
-                name="generate-text",
-                parameters=[
-                    ActionParameter("prompt", True, str, "The input prompt for text generation"),
-                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
-                    ActionParameter("model", False, str, "Model to use for generation")
-                ],
-                description="Generate text using EternalAI models"
-            ),
-            "check-model": Action(
-                name="check-model",
-                parameters=[
-                    ActionParameter("model", True, str, "Model name to check availability")
-                ],
-                description="Check if a specific model is available"
-            ),
-            "list-models": Action(
-                name="list-models",
-                parameters=[],
-                description="List all available EternalAI models"
-            )
+            "generate-text": self.generate_text,
+            "check-model": self.check_model,
+            "list-models": self.list_models
         }
 
     def _get_client(self) -> OpenAI:
@@ -87,7 +72,7 @@ class EternalAIConnection(BaseConnection):
             self._client = OpenAI(api_key=api_key, base_url=api_url)
         return self._client
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Sets up EternalAI API authentication"""
         logger.info("\n🤖 EternalAI API SETUP")
 
@@ -167,17 +152,16 @@ class EternalAIConnection(BaseConnection):
         """Generate text using EternalAI models"""
         try:
             client = self._get_client()
-            model = model or self.config["model"]
+            config = cast(EternalAIConfig, self.config)
+            model = model or config.model
             logger.info(f"model {model}")
 
-            chain_id = chain_id or self.config["chain_id"]
-            if not chain_id or chain_id == "":
-                chain_id = "45762"
+            chain_id = chain_id or config.chain_id
             logger.info(f"chain_id {chain_id}")
 
-            agent_id = self.config["agent_id"] or None
-            contract_address = self.config["contract_address"] or None
-            rpc = self.config["rpc_url"] or None
+            agent_id = config.agent_id
+            contract_address = config.contract_address
+            rpc = config.rpc_url
 
             if agent_id and contract_address and rpc:
                 logger.info(f"agent_id: {agent_id}, contract_address: {contract_address}")
@@ -247,16 +231,12 @@ class EternalAIConnection(BaseConnection):
         except Exception as e:
             raise EternalAIAPIError(f"Listing models failed: {e}")
 
-    def perform_action(self, action_name: str, kwargs) -> Any:
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
         """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
 
-        action = self.actions[action_name]
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
-
+        # Call the appropriate method based on action name
         method_name = action_name.replace('-', '_')
         method = getattr(self, method_name)
         return method(**kwargs)

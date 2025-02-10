@@ -1,7 +1,7 @@
 import logging
 import os
 import importlib
-from typing import Dict, Any, List, Type, get_type_hints, Union
+from typing import Dict, Any, List, Type, get_type_hints, Union, Optional, cast
 from dataclasses import is_dataclass
 from eth_account import Account
 from pydantic import BaseModel
@@ -10,6 +10,8 @@ from dotenv import set_key, load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 from src.helpers import print_h_bar
 from src.action_handler import register_action
+from src.types.connections import GoatConfig, PluginConfig
+from src.types.config import BaseConnectionConfig
 from goat.classes.plugin_base import PluginBase
 from goat import ToolBase, WalletClientBase, get_tools
 from goat_wallets.web3 import Web3EVMWalletClient
@@ -30,16 +32,25 @@ class GoatConfigurationError(GoatConnectionError):
 
 
 class GoatConnection(BaseConnection):
+    _is_configured: bool
+    _wallet_client: Optional[WalletClientBase]
+    _plugins: Dict[str, PluginBase]
+    _action_registry: Dict[str, ToolBase]
+    
     def __init__(self, config: Dict[str, Any]):
         logger.info("🐐 Initializing Goat connection...")
-
+        # Validate config before passing to super
+        validated_config = GoatConfig(**config)
+        super().__init__(validated_config)
+        
         self._is_configured = False
-        self._wallet_client: WalletClientBase | None = None
-        self._plugins: Dict[str, PluginBase] = {}
-        self._action_registry: Dict[str, ToolBase] = {}
-        self._config = self.validate_config(
-            config
-        )  # Store config but don't register actions yet
+        self._wallet_client = None
+        self._plugins = {}
+        self._action_registry = {}
+        
+        # Load plugins from validated config
+        for plugin_config in validated_config.plugins:
+            self._load_plugin(plugin_config.dict())
 
     def _resolve_type(self, raw_value: str, module) -> Any:
         """Resolve a type from a string, either from plugin module or fully qualified path"""
@@ -195,42 +206,22 @@ class GoatConnection(BaseConnection):
         """Whether this connection provides LLM capabilities"""
         return False
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate GOAT configuration"""
-        required_fields = ["plugins"]
-        required_plugin_fields = ["name", "args"]
-
-        missing_fields = [field for field in required_fields if not config.get(field)]
-        if missing_fields:
-            raise ValueError(
-                f"Missing required configuration fields: {', '.join(missing_fields)}"
-            )
-
-        for plugin_config in config["plugins"]:
-            missing_plugin_fields = [
-                field for field in required_plugin_fields if field not in plugin_config
-            ]
-            if missing_plugin_fields:
-                raise ValueError(
-                    f"Missing required fields for plugin: {', '.join(missing_plugin_fields)}"
-                )
-
-            if not isinstance(plugin_config["args"], dict):
-                raise ValueError("args must be a dictionary")
-
-            for arg_name, arg_value in plugin_config["args"].items():
-                if not isinstance(arg_name, str):
-                    raise ValueError(f"Invalid key for {arg_name}: {arg_value}")
-
-            plugin_name = plugin_config["name"]
-            if not plugin_name.isidentifier():
-                raise ValueError(
-                    f"Invalid plugin name '{plugin_name}'. Must be a valid Python identifier"
-                )
-
-            self._load_plugin(plugin_config)
-
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate GOAT configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = GoatConfig(**config)
+            
+            # Additional validation for plugin names
+            for plugin_config in validated_config.plugins:
+                if not plugin_config.name.isidentifier():
+                    raise ValueError(
+                        f"Invalid plugin name '{plugin_config.name}'. Must be a valid Python identifier"
+                    )
+            
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid GOAT configuration: {str(e)}")
 
     def _register_actions_with_wallet(self) -> None:
         """Register actions with the current wallet client"""

@@ -1,11 +1,13 @@
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional, cast, List, Callable
 from dotenv import load_dotenv, set_key
 from together import Together
 from together.types.models import ModelObject, ModelType
 
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.types.connections import TogetherConfig
+from src.types.config import BaseConnectionConfig
 
 logger = logging.getLogger("connections.together_ai_connection")
 
@@ -22,51 +24,34 @@ class TogetherAIAPIError(TogetherAIConnectionError):
     pass
 
 class TogetherAIConnection(BaseConnection):
+    _client: Optional[Together]
+    
     def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+        logger.info("Initializing Together AI connection...")
+        # Validate config before passing to super
+        validated_config = TogetherConfig(**config)
+        super().__init__(validated_config)
         self._client = None
 
     @property
     def is_llm_provider(self) -> bool:
         return True
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Together AI configuration from JSON"""
-        required_fields = ["model"]
-        missing_fields = [field for field in required_fields if field not in config]
-        
-        if missing_fields:
-            raise ValueError(f"Missing required configuration fields: {', '.join(missing_fields)}")
-            
-        if not isinstance(config["model"], str):
-            raise ValueError("model must be a string")
-            
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate Together AI configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = TogetherConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid Together AI configuration: {str(e)}")
 
     def register_actions(self) -> None:
         """Register available Together AI actions"""
         self.actions = {
-            "generate-text": Action(
-                name="generate-text",
-                parameters=[
-                    ActionParameter("prompt", True, str, "The input prompt for text generation"),
-                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
-                    ActionParameter("model", False, str, "Model to use for generation")
-                ],
-                description="Generate text using Together AI models"
-            ),
-            "check-model": Action(
-                name="check-model",
-                parameters=[
-                    ActionParameter("model", True, str, "Model name to check availability")
-                ],
-                description="Check if a specific model is available"
-            ),
-            "list-models": Action(
-                name="list-models",
-                parameters=[],
-                description="List all available Together AI models"
-            )
+            "generate-text": self.generate_text,
+            "check-model": self.check_model,
+            "list-models": self.list_models
         }
 
     def _get_client(self) -> Together:
@@ -78,7 +63,7 @@ class TogetherAIConnection(BaseConnection):
             self._client = Together(api_key=api_key)
         return self._client
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Sets up Together AI API authentication"""
         logger.info("\n🤖 TOGETHER AI API SETUP")
 
@@ -93,7 +78,7 @@ class TogetherAIConnection(BaseConnection):
         logger.info("2. Navigate to the API Keys section.")
         logger.info("3. Create a new API key or use an existing one.")
 
-        api_key = input("\nEnter your Together AI API key: ")
+        api_key = kwargs.get("api_key") or input("\nEnter your Together AI API key: ")
 
         try:
             if not os.path.exists('.env'):
@@ -130,20 +115,23 @@ class TogetherAIConnection(BaseConnection):
                 logger.debug(f"Configuration check failed: {e}")
             return False
 
-    def generate_text(self, prompt: str, system_prompt: str, model: str = None, **kwargs) -> str:
+    def generate_text(self, prompt: str, system_prompt: str, model: Optional[str] = None, **kwargs: Any) -> str:
         """Generate text using Together AI models"""
         try:
             client = self._get_client()
             
             # Use configured model if none provided
             if not model:
-                model = self.config["model"]
+                config = cast(TogetherConfig, self.config)
+                model = config.model
 
             messages = [{"role": "user", "content": prompt},{"role": "system", "content": system_prompt},] 
 
             completion = client.chat.completions.create(
                 model=model,
                 messages=messages,
+                temperature=cast(TogetherConfig, self.config).temperature,
+                max_tokens=cast(TogetherConfig, self.config).max_tokens
             )
 
             return completion.choices[0].message.content
@@ -163,28 +151,25 @@ class TogetherAIConnection(BaseConnection):
         except Exception as e:
             raise TogetherAIAPIError(f"Checking model failed: {e}")
 
-    def list_models(self, **kwargs) -> None:
+    def list_models(self, **kwargs: Any) -> List[str]:
         """List all available Together AI models"""
         try:
             client = self._get_client()
             models = client.models.list()
-            logger.info("\nTOGETHER AI MODELS:")
-            for i, model in enumerate(models, start=1):
+            model_list = []
+            for model in models:
                 if model.type in {ModelType.CHAT.value, ModelType.LANGUAGE.value}:
-                    logger.info(f"{i}. {model.id}")
+                    model_list.append(model.id)
+                    logger.info(f"{len(model_list)}. {model.id}")
+            return model_list
 
         except Exception as e:
             raise TogetherAIAPIError(f"Listing models failed: {e}")
     
-    def perform_action(self, action_name: str, kwargs) -> Any:
-        """Execute a Together AI action with validation"""
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
+        """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
-
-        action = self.actions[action_name]
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
 
         # Call the appropriate method based on action name
         method_name = action_name.replace('-', '_')

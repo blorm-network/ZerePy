@@ -1,9 +1,12 @@
 import logging
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional, cast, List, Union
 from dotenv import load_dotenv, set_key
 from anthropic import Anthropic, NotFoundError
-from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from anthropic.types import TextBlock, ToolUseBlock
+from src.connections.base_connection import BaseConnection
+from src.types.connections import AnthropicConfig
+from src.types.config import BaseConnectionConfig
 
 logger = logging.getLogger("connections.anthropic_connection")
 
@@ -20,51 +23,33 @@ class AnthropicAPIError(AnthropicConnectionError):
     pass
 
 class AnthropicConnection(BaseConnection):
+    _client: Optional[Anthropic]
+    
     def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+        # Validate config before passing to super
+        validated_config = AnthropicConfig(**config)
+        super().__init__(validated_config)
         self._client = None
 
     @property
     def is_llm_provider(self) -> bool:
         return True
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Anthropic configuration from JSON"""
-        required_fields = ["model"]
-        missing_fields = [field for field in required_fields if field not in config]
-        
-        if missing_fields:
-            raise ValueError(f"Missing required configuration fields: {', '.join(missing_fields)}")
-            
-        if not isinstance(config["model"], str):
-            raise ValueError("model must be a string")
-            
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate Anthropic configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = AnthropicConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid Anthropic configuration: {str(e)}")
 
     def register_actions(self) -> None:
         """Register available Anthropic actions"""
         self.actions = {
-            "generate-text": Action(
-                name="generate-text",
-                parameters=[
-                    ActionParameter("prompt", True, str, "The input prompt for text generation"),
-                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
-                    ActionParameter("model", False, str, "Model to use for generation")
-                ],
-                description="Generate text using Anthropic models"
-            ),
-            "check-model": Action(
-                name="check-model",
-                parameters=[
-                    ActionParameter("model", True, str, "Model name to check availability")
-                ],
-                description="Check if a specific model is available"
-            ),
-            "list-models": Action(
-                name="list-models",
-                parameters=[],
-                description="List all available Anthropic models"
-            )
+            "generate-text": self.generate_text,
+            "check-model": self.check_model,
+            "list-models": self.list_models
         }
 
     def _get_client(self) -> Anthropic:
@@ -76,13 +61,13 @@ class AnthropicConnection(BaseConnection):
             self._client = Anthropic(api_key=api_key)
         return self._client
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Sets up Anthropic API authentication"""
         logger.info("\n🤖 ANTHROPIC API SETUP")
 
         if self.is_configured():
             logger.info("\nAnthropic API is already configured.")
-            response = input("Do you want to reconfigure? (y/n): ")
+            response = kwargs.get("response") or input("Do you want to reconfigure? (y/n): ")
             if response.lower() != 'y':
                 return True
 
@@ -90,7 +75,7 @@ class AnthropicConnection(BaseConnection):
         logger.info("1. Go to https://console.anthropic.com/settings/keys")
         logger.info("2. Create a new API key.")
         
-        api_key = input("\nEnter your Anthropic API key: ")
+        api_key = kwargs.get("api_key") or input("\nEnter your Anthropic API key: ")
 
         try:
             if not os.path.exists('.env'):
@@ -111,7 +96,7 @@ class AnthropicConnection(BaseConnection):
             logger.error(f"Configuration failed: {e}")
             return False
 
-    def is_configured(self, verbose = False) -> bool:
+    def is_configured(self, verbose: bool = False) -> bool:
         """Check if Anthropic API key is configured and valid"""
         try:
             load_dotenv()
@@ -128,19 +113,20 @@ class AnthropicConnection(BaseConnection):
                 logger.debug(f"Configuration check failed: {e}")
             return False
 
-    def generate_text(self, prompt: str, system_prompt: str, model: str = None, **kwargs) -> str:
+    def generate_text(self, prompt: str, system_prompt: str, model: Optional[str] = None, **kwargs: Any) -> str:
         """Generate text using Anthropic models"""
         try:
             client = self._get_client()
+            config = cast(AnthropicConfig, self.config)
             
             # Use configured model if none provided
             if not model:
-                model = self.config["model"]
+                model = config.model
 
             message = client.messages.create(
                 model=model,
-                max_tokens=1000,
-                temperature=0,
+                max_tokens=config.max_tokens or 1000,
+                temperature=config.temperature,
                 system=system_prompt,
                 messages=[
                     {
@@ -154,12 +140,19 @@ class AnthropicConnection(BaseConnection):
                     }
                 ]
             )
-            return message.content[0].text
+
+            content = message.content[0]
+            if isinstance(content, TextBlock):
+                if content.text is None:
+                    raise AnthropicAPIError("No text content returned from API")
+                return content.text
+            else:
+                raise AnthropicAPIError("Unexpected content type returned from API")
             
         except Exception as e:
             raise AnthropicAPIError(f"Text generation failed: {e}")
 
-    def check_model(self, model: str, **kwargs) -> bool:
+    def check_model(self, model: str, **kwargs: Any) -> bool:
         """Check if a specific model is available"""
         try:
             client = self._get_client()
@@ -175,29 +168,28 @@ class AnthropicConnection(BaseConnection):
         except Exception as e:
             raise AnthropicAPIError(f"Model check failed: {e}")
 
-    def list_models(self, **kwargs) -> None:
+    def list_models(self, **kwargs: Any) -> List[str]:
         """List all available Anthropic models"""
         try:
             client = self._get_client()
             response = client.models.list().data
-            model_ids = [model.id for model in response]
+            model_list: List[str] = []
+            for model in response:
+                model_list.append(str(model.id))
 
             logger.info("\nCLAUDE MODELS:")
-            for i, model in enumerate(model_ids):
-                logger.info(f"{i+1}. {model}")
+            for i, model_id in enumerate(model_list, start=1):
+                logger.info(f"{i}. {model_id}")
+            
+            return model_list
                 
         except Exception as e:
             raise AnthropicAPIError(f"Listing models failed: {e}")
 
-    def perform_action(self, action_name: str, kwargs) -> Any:
-        """Execute a Twitter action with validation"""
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
+        """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
-
-        action = self.actions[action_name]
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
 
         # Call the appropriate method based on action name
         method_name = action_name.replace('-', '_')

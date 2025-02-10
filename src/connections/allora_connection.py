@@ -1,8 +1,10 @@
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, cast
 from dotenv import set_key
 from allora_sdk.v2.api_client import AlloraAPIClient, ChainSlug
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
+from src.types.connections import AlloraConfig
+from src.types.config import BaseConnectionConfig
 import os
 import asyncio
 
@@ -21,10 +23,17 @@ class AlloraAPIError(AlloraConnectionError):
     pass
 
 class AlloraConnection(BaseConnection):
+    _client: Optional[AlloraAPIClient]
+    chain_slug: str
+    
     def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
+        logger.info("Initializing Allora connection...")
+        # Validate config before passing to super
+        validated_config = AlloraConfig(**config)
+        super().__init__(validated_config)
+        
         self._client = None
-        self.chain_slug = config.get("chain_slug", ChainSlug.TESTNET)
+        self.chain_slug = validated_config.chain_slug
 
     @property
     def is_llm_provider(self) -> bool:
@@ -44,41 +53,38 @@ class AlloraConnection(BaseConnection):
 
     def register_actions(self) -> None:
         """Register available Allora actions"""
-        actions = [
-            Action(
-                name="get-inference",
-                parameters=[
-                    ActionParameter("topic_id", True, int, "Topic ID to get inference for")
-                ],
-                description="Get inference from Allora Network for a specific topic"
-            ),
-            Action(
-                name="list-topics",
-                parameters=[],
-                description="List all available Allora Network topics"
-            )
-        ]
-        self.actions = {action.name: action for action in actions}
+        self.actions = {
+            "get-inference": self.get_inference,
+            "list-topics": self.list_topics
+        }
 
-    def _make_request(self, method_name: str, *args, **kwargs) -> Any:
-        """Make API request with error handling"""
+    async def _make_request_async(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
+        """Make async API request with error handling"""
         try:
             client = self._get_client()
             method = getattr(client, method_name)
-            
+            response = await method(*args, **kwargs)
+            return response
+        except Exception as e:
+            raise AlloraAPIError(f"API request failed: {str(e)}")
+
+    def _make_request(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
+        """Make API request with error handling"""
+        try:
             # Create event loop for async calls
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                response = loop.run_until_complete(method(*args, **kwargs))
+                response = loop.run_until_complete(
+                    self._make_request_async(method_name, *args, **kwargs)
+                )
                 return response
             finally:
                 loop.close()
-                
         except Exception as e:
             raise AlloraAPIError(f"API request failed: {str(e)}")
 
-    def get_inference(self, topic_id: int) -> Dict[str, Any]:
+    def get_inference(self, topic_id: int, **kwargs: Any) -> Dict[str, Any]:
         """Get inference from Allora Network for a specific topic"""
         try:
             response = self._make_request('get_inference_by_topic_id', topic_id)
@@ -89,25 +95,26 @@ class AlloraConnection(BaseConnection):
         except Exception as e:
             raise AlloraAPIError(f"Failed to get inference: {str(e)}")
 
-    def list_topics(self) -> List[Dict[str, Any]]:
+    def list_topics(self, **kwargs: Any) -> List[Dict[str, Any]]:
         """List all available Allora Network topics"""
         try:
-            return self._make_request('get_all_topics')
+            response = self._make_request('get_all_topics')
+            return cast(List[Dict[str, Any]], response)
         except Exception as e:
             raise AlloraAPIError(f"Failed to list topics: {str(e)}")
 
-    def configure(self) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Sets up Allora API authentication"""
         print("\n🔮 ALLORA API SETUP")
         
         if self.is_configured():
             print("\nAllora API is already configured.")
-            response = input("Do you want to reconfigure? (y/n): ")
+            response = kwargs.get("response") or input("Do you want to reconfigure? (y/n): ")
             if response.lower() != 'y':
                 return True
 
         try:
-            api_key = input("\nEnter your Allora API key: ").strip()
+            api_key = kwargs.get("api_key") or input("\nEnter your Allora API key: ").strip()
             if not api_key:
                 raise AlloraConfigurationError("API key cannot be empty")
 
@@ -120,10 +127,14 @@ class AlloraConnection(BaseConnection):
             logger.error(f"Configuration failed: {e}")
             return False
 
-    def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Allora configuration from JSON"""
-        # No required fields for Allora connection
-        return config
+    def validate_config(self, config: Dict[str, Any]) -> BaseConnectionConfig:
+        """Validate Allora configuration from JSON and convert to Pydantic model"""
+        try:
+            # Convert dict config to Pydantic model
+            validated_config = AlloraConfig(**config)
+            return validated_config
+        except Exception as e:
+            raise ValueError(f"Invalid Allora configuration: {str(e)}")
 
     def is_configured(self, verbose: bool = False) -> bool:
         """Check if Allora API is configured"""
@@ -135,15 +146,10 @@ class AlloraConnection(BaseConnection):
                 logger.info("\n✅ Allora API key found")
         return bool(api_key)
 
-    def perform_action(self, action_name: str, kwargs) -> Any:
+    def perform_action(self, action_name: str, **kwargs: Any) -> Any:
         """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
-
-        action = self.actions[action_name]
-        errors = action.validate_params(kwargs)
-        if errors:
-            raise ValueError(f"Invalid parameters: {', '.join(errors)}")
 
         method_name = action_name.replace('-', '_')
         method = getattr(self, method_name)

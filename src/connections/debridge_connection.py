@@ -5,7 +5,6 @@ from typing import Dict, Any, List
 from dotenv import load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 from src.connections.solana_connection import SolanaConnection
-import asyncio
 
 logger = logging.getLogger("connections.debridge_connection")
 
@@ -45,6 +44,19 @@ class DeBridgeConnection(BaseConnection):
                 ],
                 description="Create a cross-chain bridging transaction"
             ),
+            "get_tokens_info": Action(
+                name="get_tokens_info",
+                parameters=[
+                    ActionParameter("chainId", True, str, "Chain ID to get token information for"),
+                    ActionParameter("search", False, str, "Optional search term to filter tokens by name or symbol")
+                ],
+                description="Get information about tokens available for cross-chain bridging"
+            ),
+            "get_supported_chains": Action(
+                name="get_supported_chains",
+                parameters=[],  # No parameters needed
+                description="Get list of chains supported by deBridge for cross-chain transfers"
+            ),
             "execute_bridge_tx": Action(
                 name="execute_bridge_tx",
                 parameters=[],  # No parameters needed, will use stored tx data
@@ -67,7 +79,7 @@ class DeBridgeConnection(BaseConnection):
         wallet = self.solana_connection._get_wallet()
         return str(wallet.pubkey())
 
-    def _make_request(self, method: str, url: str, **kwargs) -> Any:
+    def _make_request(self, method: str, url: str, **kwargs) -> Dict[str, Any]:
         """Make HTTP request with error handling"""
         headers = {"accept": "application/json"}
         kwargs['headers'] = headers
@@ -185,8 +197,103 @@ class DeBridgeConnection(BaseConnection):
         method_name = action_name
         method = getattr(self, method_name)
         
-        # Handle async methods
-        if action_name == "execute_bridge_tx":
-            return asyncio.run(method(**kwargs))
-            
         return method(**kwargs)
+
+    def get_supported_chains(self, params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        Get list of chains supported by deBridge protocol
+        Returns: List of supported chains with their configurations
+        """
+        try:
+            response = self._make_request("GET", f"{self.api_url}/supported-chains-info")
+            if response.get("error"):
+                raise DeBridgeAPIError(f"API Error: {response['error']}")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch supported chains: {str(e)}")
+            raise DeBridgeAPIError(f"Failed to fetch supported chains: {str(e)}")
+
+    def get_tokens_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get token information for a specific chain
+        Returns: Token information including name, symbol, and decimals
+        """
+        try:
+            response = self._make_request(
+                "GET",
+                f"{self.api_url}/token-list",
+                params={"chainId": params["chainId"]}
+            )
+            
+            if response.get("error"):
+                raise DeBridgeAPIError(f"API Error: {response['error']}")
+            
+            # Extract token data
+            tokens = response.get("tokens", [])
+            
+            # If search query provided, filter tokens
+            if "search" in params:
+                search_term = params["search"].lower()
+                tokens = [
+                    token for token in tokens
+                    if search_term in token.get("name", "").lower() or
+                    search_term in token.get("symbol", "").lower() or
+                    search_term in token.get("address", "").lower()
+                ]
+            
+            # Limit results if specified
+            if "limit" in params:
+                try:
+                    limit = int(params["limit"])
+                    tokens = tokens[:limit]
+                except (ValueError, TypeError):
+                    pass  # Ignore invalid limit
+                    
+            return {
+                "status": "success",
+                "tokens": tokens,
+                "count": len(tokens)
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch token information: {str(e)}")
+            raise DeBridgeAPIError(f"Failed to fetch token information: {str(e)}")
+
+    def execute_bridge_tx(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Execute a bridge transaction using stored transaction data
+        Returns: Transaction signature
+        """
+        try:
+            if not self.solana_connection:
+                raise DeBridgeConnectionError("Solana connection not set")
+
+            tx_data = params.get("tx_data")
+            if not tx_data:
+                raise DeBridgeConnectionError("No transaction data provided")
+
+            # Get transaction data from the stored result
+            tx_buffer = bytes.fromhex(tx_data["tx"]["data"][2:])  # Remove '0x' prefix
+            
+            # Create and sign transaction
+            transaction = self.solana_connection.create_versioned_transaction(tx_buffer)
+            
+            # Send transaction
+            signature = self.solana_connection.send_transaction(
+                transaction,
+                opts={
+                    "skipPreflight": False,
+                    "preflightCommitment": "confirmed",
+                    "maxRetries": 3
+                }
+            )
+
+            return {
+                "signature": signature,
+                "orderId": tx_data.get("orderId")
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to execute bridge transaction: {str(e)}")
+            raise DeBridgeAPIError(f"Failed to execute bridge transaction: {str(e)}")

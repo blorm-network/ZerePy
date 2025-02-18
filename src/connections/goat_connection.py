@@ -253,7 +253,7 @@ class GoatConnection(BaseConnection):
 
             register_action(tool.name)(
                 lambda agent, tool_name=tool.name, **kwargs: self.perform_action(
-                    tool_name, **kwargs
+                    tool_name, kwargs
                 )
             )
 
@@ -393,7 +393,7 @@ class GoatConnection(BaseConnection):
             logger.error(error_msg)
             raise GoatConfigurationError(error_msg)
 
-    def perform_action(self, action_name: str, **kwargs) -> Any:
+    def perform_action(self, action_name: str, kwargs) -> Any:
         """Execute a GOAT action using a plugin's tool"""
         action = self.actions.get(action_name)
         if not action:

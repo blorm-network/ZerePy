@@ -108,6 +108,10 @@
       "rpc": "https://eth.blockrazor.xyz"  
     },
     {
+      "name": "evm",
+      "network": "ethereum"
+     },
+    {
       "name": "discord",
       "message_read_count": 10,
       "message_emoji_name": "❤️",

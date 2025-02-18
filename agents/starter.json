@@ -33,6 +33,10 @@
        {
          "name": "sonic",
          "network": "mainnet"
+       },
+       {
+        "name": "evm",
+        "network": "polygon"
        }
      ],
      "tasks": [

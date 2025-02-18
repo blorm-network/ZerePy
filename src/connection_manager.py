@@ -20,6 +20,7 @@ from src.connections.debridge_connection import DeBridgeConnection
 from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
 from src.connections.together_connection import TogetherAIConnection
+from src.connections.evm_connection import EVMConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -70,6 +71,8 @@ class ConnectionManager:
             return EthereumConnection
         elif class_name == "together":
             return TogetherAIConnection
+        elif class_name == "evm":
+            return EVMConnection
         return None
 
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:

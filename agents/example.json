@@ -1,10 +1,10 @@
 {
   "name": "SupplyChainAgent",
   "bio": [
-    "You are SupplyChainAgent, an advanced AI agent specializing in optimizing fresh produce supply chains.",
-    "Your primary mission is to minimize waste, maintain product quality, and ensure efficient delivery through smart contract automation.",
-    "You analyze real-time data from IoT sensors and make decisions based on temperature, time, and quality metrics.",
-    "You operate on the Sonic blockchain to ensure transparent and efficient supply chain operations."
+    "You are SupplyChainAgent, specializing in fresh produce supply chain optimization.",
+    "Your core mission is to solve critical challenges: 30-40% shelf life loss in transit, temperature control gaps, complex demand forecasting, and last-mile inefficiency.",
+    "You leverage IoT sensors, AI predictions, and Sonic blockchain to create an efficient, transparent supply chain.",
+    "Your decisions directly impact food waste reduction, cost optimization, and quality maintenance."
   ],
   "traits": [
     "Analytical",
@@ -19,7 +19,6 @@
     "Shelf life prediction updated for strawberry batch #910. Quality score: 92/100. Recommended distribution priority: High.",
     "Smart contract executed for completed delivery #1112. Quality metrics met, payment released to carrier."
   ],
-  "example_accounts": ["supply_chain_ops", "quality_control"],
   "loop_delay": 300,
   "config": [
     {
@@ -35,96 +34,123 @@
     {
       "name": "monitor-temperature",
       "weight": 5,
-      "description": "Monitor and analyze temperature data from IoT sensors",
+      "description": "Maintain cold chain integrity throughout transit",
       "subtasks": [
         "detect-breaches",
         "calculate-severity",
         "trigger-alerts",
-        "record-on-blockchain"
+        "record-on-blockchain",
+        "initiate-corrective-actions",
+        "update-quality-impact"
       ]
     },
     {
       "name": "predict-demand",
       "weight": 4,
-      "description": "Generate demand forecasts using historical data and current factors",
+      "description": "Advanced demand forecasting for fresh produce",
       "subtasks": [
         "analyze-historical-data",
         "evaluate-seasonal-factors",
-        "calculate-confidence-intervals"
+        "assess-weather-impact",
+        "track-local-events",
+        "calculate-confidence-intervals",
+        "adjust-inventory-levels"
       ]
     },
     {
       "name": "optimize-routes",
       "weight": 4,
-      "description": "Optimize delivery routes considering multiple constraints",
+      "description": "Last-mile optimization and delivery efficiency",
       "subtasks": [
         "analyze-current-conditions",
         "calculate-optimal-paths",
+        "manage-temperature-zones",
+        "coordinate-loading-times",
+        "monitor-real-time-traffic",
         "generate-contingency-routes"
       ]
     },
     {
       "name": "manage-shelf-life",
-      "weight": 3,
-      "description": "Track and predict product shelf life",
+      "weight": 4,
+      "description": "Dynamic shelf life tracking and optimization",
       "subtasks": [
         "calculate-remaining-life",
         "assess-quality-metrics",
-        "prioritize-distribution"
+        "predict-degradation-rate",
+        "optimize-storage-conditions",
+        "prioritize-distribution",
+        "minimize-waste"
       ]
     },
     {
       "name": "execute-contracts",
       "weight": 3,
-      "description": "Manage smart contracts on Sonic blockchain",
+      "description": "Smart contract management on Sonic blockchain",
       "subtasks": [
         "create-shipment-contracts",
         "update-status",
         "process-payments",
-        "handle-disputes"
+        "handle-disputes",
+        "track-compliance",
+        "manage-penalties"
       ]
     }
   ],
-  "use_time_based_weights": true,
-  "time_based_multipliers": {
-    "peak_hours_multiplier": 2.0,
-    "off_peak_multiplier": 0.7,
-    "night_monitoring_multiplier": 1.5,
-    "loading_hours_multiplier": 1.8,
-    "delivery_window_multiplier": 1.6
-  },
-  "alert_thresholds": {
-    "temperature": {
-      "critical_high": 8.0,
-      "critical_low": 2.0,
-      "warning_high": 6.5,
-      "warning_low": 3.5
-    },
-    "shelf_life": {
-      "critical": 24,
-      "warning": 48,
-      "review": 72
-    },
-    "delivery_delay": {
-      "critical": 120,
-      "warning": 60,
-      "notice": 30
-    }
-  },
   "optimization_parameters": {
+    "temperature_control": {
+      "monitoring_interval": 300,
+      "breach_threshold_duration": 900,
+      "zones": {
+        "frozen": {
+          "min": -23.0,
+          "max": -18.0
+        },
+        "chilled": {
+          "min": 2.0,
+          "max": 6.0
+        },
+        "produce": {
+          "min": 4.0,
+          "max": 8.0
+        }
+      }
+    },
     "route": {
       "max_stops": 12,
       "max_duration": 480,
       "temperature_variance": 1.5,
-      "priority_weight": 3
+      "priority_weight": 3,
+      "last_mile_constraints": {
+        "time_windows": true,
+        "temperature_zones": true,
+        "traffic_patterns": true,
+        "delivery_priorities": true
+      }
     },
-    "load": {
-      "max_capacity": 2000,
-      "temperature_zones": ["frozen", "chilled", "ambient"],
-      "compatibility_matrix": {
-        "frozen": ["frozen"],
-        "chilled": ["chilled"],
-        "ambient": ["ambient", "chilled"]
+    "shelf_life": {
+      "calculation_factors": [
+        "base_shelf_life",
+        "temperature_history",
+        "humidity_exposure",
+        "handling_events",
+        "transport_conditions"
+      ],
+      "quality_thresholds": {
+        "premium": 90,
+        "standard": 80,
+        "minimum": 70
+      }
+    },
+    "demand_forecasting": {
+      "historical_data_range": 90,
+      "seasonal_patterns": true,
+      "weather_impact": true,
+      "local_events": true,
+      "confidence_levels": {
+        "high": 90,
+        "medium": 80,
+        "low": 70
       }
     }
   },
@@ -133,10 +159,21 @@
     "quality_threshold": 85,
     "payment_delay": 24,
     "dispute_window": 48,
+    "compliance_requirements": {
+      "temperature_logging": true,
+      "location_tracking": true,
+      "quality_verification": true,
+      "delivery_confirmation": true
+    },
     "penalty_rates": {
       "temperature_breach": 0.1,
       "late_delivery": 0.05,
       "quality_failure": 0.15
+    },
+    "incentive_rates": {
+      "early_delivery": 0.05,
+      "perfect_temperature": 0.08,
+      "high_quality": 0.1
     }
   }
 }

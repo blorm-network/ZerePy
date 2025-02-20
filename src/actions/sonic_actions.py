@@ -81,40 +81,54 @@ def monitor_temperature(agent, **kwargs):
         return None
 
 # Demand Prediction Actions
-@register_action("predict-demand")
-def predict_demand(agent, **kwargs):
+@register_action("predict-demand")  # Matches exactly with the task name in JSON
+async def predict_demand(agent, **kwargs):  # Make it async
     """Generate demand forecasts using historical data and current factors"""
     try:
-        # Collect prediction inputs
-        historical_data = agent.connection_manager.connections["sonic"].get_historical_data(days=90)
-        seasonal_factors = get_seasonal_factors()
-        weather_data = get_weather_data()
-        local_events = get_local_events()
+        logger.info("Starting demand prediction...")
         
-        # Generate prediction
+        # Collect prediction inputs
+        try:
+            historical_data = await agent.connection_manager.connections["sonic"].get_historical_data(days=90)
+            logger.info(f"Retrieved historical data: {len(historical_data) if historical_data else 0} records")
+        except Exception as e:
+            logger.error(f"Failed to get historical data: {str(e)}")
+            historical_data = []
+
+        # Simplified initial version to test action registration
         prediction = {
-            "forecast": calculate_demand_forecast(
-                historical_data,
-                seasonal_factors,
-                weather_data,
-                local_events
-            ),
-            "confidence_interval": calculate_confidence_interval(historical_data),
-            "factors": {
-                "seasonal": seasonal_factors,
-                "weather": weather_data,
-                "events": local_events
-            },
+            "forecast": 100,  # Placeholder value
+            "confidence_interval": 0.95,
             "timestamp": datetime.now().isoformat()
         }
         
-        # Record prediction on blockchain
-        agent.connection_manager.connections["sonic"].record_demand_prediction(prediction)
+        logger.info(f"Generated prediction: {prediction}")
         
-        return prediction
+        # Record prediction (commented out for initial testing)
+        # await agent.connection_manager.connections["sonic"].record_demand_prediction(prediction)
+        
+        return {
+            "status": "completed",
+            "prediction": prediction
+        }
+
     except Exception as e:
-        logger.error(f"Demand prediction failed: {str(e)}")
-        return None
+        logger.error(f"Demand prediction failed: {str(e)}", exc_info=True)
+        return {
+            "status": "failed",
+            "error": str(e)
+        }
+
+# Helper function for debugging
+def verify_action_registration():
+    from src.action_handler import list_registered_actions
+    actions = list_registered_actions()
+    logger.info(f"Registered actions: {actions}")
+    return "predict-demand" in actions
+
+# Add this to check registration
+verify_action_registration()
+
 
 # Route Optimization Actions
 @register_action("optimize-routes")

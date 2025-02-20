@@ -194,23 +194,46 @@ class EternalAIConnection(BaseConnection):
                     except Exception as e:
                         logger.error(f"get on-chain system_prompt fail {e}")
 
+            stream = self.config["stream"]
+            logger.info(f"call completions api stream {stream}")
             completion = client.chat.completions.create(
                 model=model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt},
                 ],
-                extra_body={"chain_id": chain_id}
+                extra_body={"chain_id": chain_id},
+                stream=stream,
             )
-
-            if completion.choices is None:
-                raise EternalAIAPIError(f"Text generation failed: completion.choices is None")
-            try:
-                if completion.onchain_data is not None:
-                    logger.info(f"response onchain data: {json.dumps(completion.onchain_data, indent=4)}")
-            except:
-                logger.info(f"response onchain data object: {completion.onchain_data}", )
-            return completion.choices[0].message.content
+            if not stream:
+                if completion.choices is None:
+                    raise EternalAIAPIError(f"Text generation failed: completion.choices is None")
+                try:
+                    if completion.onchain_data is not None:
+                        logger.info(f"response onchain data: {json.dumps(completion.onchain_data, indent=4)}")
+                except:
+                    logger.info(f"response onchain data object: {completion.onchain_data}", )
+                logger.info(
+                    f"end call completions api with content:\n\n {completion.choices[0].message.content} \n\n\n\n")
+                return completion.choices[0].message.content
+            else:
+                content = ""
+                # logger.info(f"completion {str(completion)}")
+                for chunk in completion:
+                    if chunk.choices is not None:
+                        delta = chunk.choices[0].delta
+                        if delta is not None and delta.content is not None:
+                            content += delta.content
+                            # logger.info(f"content -> {delta.content}")
+                    else:
+                        try:
+                            if chunk.onchain_data is not None and chunk.onchain_data.infer_id is not None and chunk.onchain_data.infer_id != "":
+                                logger.info(f"response onchain data: {json.dumps(chunk.onchain_data, indent=4)}")
+                        except:
+                            logger.info(f"response onchain data object: {chunk.onchain_data}", )
+                        break
+                logger.info(f"end call completions api with content:\n\n {content} \n\n\n\n")
+                return content
 
         except Exception as e:
             raise EternalAIAPIError(f"Text generation failed: {e}")

@@ -107,13 +107,7 @@ This will create a virtual environment and install all required dependencies.
 
 ## Usage
 
-1. Activate the virtual environment:
-
-```bash
-poetry shell
-```
-
-2. Run the application:
+1. Run the application:
 
 ```bash
 poetry run python main.py

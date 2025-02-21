@@ -29,6 +29,9 @@ similar core functionality as Zerebro. For creative outputs, you'll need to fine
 - AI/ML Tools:
   - GOAT (Onchain Agent Toolkit)
   - Allora (Network inference)
+- Others:
+  - Perplexity 
+  - Firecrawl
 
 ### Language Model Support
 
@@ -135,6 +138,8 @@ poetry run python main.py
    configure-connection hyperbolic # For Hyperbolic
    configure-connection groq       # For GROQ
    configure-connection together   # For Together AI
+   configure-connection perplexity # For Perplexity 
+   configure-connection firecrawl  # For Firecrawl
    ```
 
 2. Use `list-connections` to see all available connections and their status

@@ -5,7 +5,7 @@ from dotenv import load_dotenv, set_key
 from openai import OpenAI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("connections.openai_connection")
 
 class OpenAIConnectionError(Exception):
     """Base exception for OpenAI connection errors"""
@@ -79,18 +79,18 @@ class OpenAIConnection(BaseConnection):
 
     def configure(self) -> bool:
         """Sets up OpenAI API authentication"""
-        print("\n🤖 OPENAI API SETUP")
+        logger.info("\n🤖 OPENAI API SETUP")
 
         if self.is_configured():
-            print("\nOpenAI API is already configured.")
+            logger.info("\nOpenAI API is already configured.")
             response = input("Do you want to reconfigure? (y/n): ")
             if response.lower() != 'y':
                 return True
 
-        print("\n📝 To get your OpenAI API credentials:")
-        print("1. Go to https://platform.openai.com/account/api-keys")
-        print("2. Create a new project or open an existing one.")
-        print("3. In your project settings, navigate to the API keys section and create a new API key")
+        logger.info("\n📝 To get your OpenAI API credentials:")
+        logger.info("1. Go to https://platform.openai.com/account/api-keys")
+        logger.info("2. Create a new project or open an existing one.")
+        logger.info("3. In your project settings, navigate to the API keys section and create a new API key")
         
         api_key = input("\nEnter your OpenAI API key: ")
 
@@ -105,8 +105,8 @@ class OpenAIConnection(BaseConnection):
             client = OpenAI(api_key=api_key)
             client.models.list()
 
-            print("\n✅ OpenAI API configuration successfully saved!")
-            print("Your API key has been stored in the .env file.")
+            logger.info("\n✅ OpenAI API configuration successfully saved!")
+            logger.info("Your API key has been stored in the .env file.")
             return True
 
         except Exception as e:
@@ -154,7 +154,7 @@ class OpenAIConnection(BaseConnection):
 
     def check_model(self, model, **kwargs):
         try:
-            client = self._get_client
+            client = self._get_client()
             try:
                 client.models.retrieve(model=model)
                 # If we get here, the model exists

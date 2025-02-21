@@ -7,6 +7,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from src.connection_manager import ConnectionManager
 from src.helpers import print_h_bar
+from src.action_handler import execute_action
+import src.actions.twitter_actions  
+import src.actions.echochamber_actions
+import src.actions.solana_actions
+from datetime import datetime
 
 REQUIRED_FIELDS = ["name", "bio", "traits", "examples", "loop_delay", "config", "tasks"]
 
@@ -29,17 +34,25 @@ class ZerePyAgent:
             self.bio = agent_dict["bio"]
             self.traits = agent_dict["traits"]
             self.examples = agent_dict["examples"]
+            self.example_accounts = agent_dict["example_accounts"]
             self.loop_delay = agent_dict["loop_delay"]
             self.connection_manager = ConnectionManager(agent_dict["config"])
+            self.use_time_based_weights = agent_dict["use_time_based_weights"]
+            self.time_based_multipliers = agent_dict["time_based_multipliers"]
 
-            # Extract Twitter config
+            has_twitter_tasks = any("tweet" in task["name"] for task in agent_dict.get("tasks", []))
+            
             twitter_config = next((config for config in agent_dict["config"] if config["name"] == "twitter"), None)
-            if not twitter_config:
-                raise KeyError("Twitter configuration is required")
+            
+            if has_twitter_tasks and twitter_config:
+                self.tweet_interval = twitter_config.get("tweet_interval", 900)
+                self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
 
-            # TODO: These should probably live in the related task parameters
-            self.tweet_interval = twitter_config.get("tweet_interval", 900)
-            self.own_tweet_replies_count = twitter_config.get("own_tweet_replies_count", 2)
+            # Extract Echochambers config
+            echochambers_config = next((config for config in agent_dict["config"] if config["name"] == "echochambers"), None)
+            if echochambers_config:
+                self.echochambers_message_interval = echochambers_config.get("message_interval", 60)
+                self.echochambers_history_count = echochambers_config.get("history_read_count", 50)
 
             self.is_llm_set = False
 
@@ -49,6 +62,7 @@ class ZerePyAgent:
             # Extract loop tasks
             self.tasks = agent_dict.get("tasks", [])
             self.task_weights = [task.get("weight", 0) for task in self.tasks]
+            self.logger = logging.getLogger("agent")
 
             # Set up empty agent state
             self.state = {}
@@ -64,11 +78,12 @@ class ZerePyAgent:
             raise ValueError("No configured LLM provider found")
         self.model_provider = llm_providers[0]
 
-        # Load Twitter username for self-reply detection
-        load_dotenv()
-        self.username = os.getenv('TWITTER_USERNAME', '').lower()
-        if not self.username:
-                raise ValueError("Twitter username is required")
+        # Load Twitter username for self-reply detection if Twitter tasks exist
+        if any("tweet" in task["name"] for task in self.tasks):
+            load_dotenv()
+            self.username = os.getenv('TWITTER_USERNAME', '').lower()
+            if not self.username:
+                logger.warning("Twitter username not found, some Twitter functionalities may be limited")
 
     def _construct_system_prompt(self) -> str:
         """Construct the system prompt from agent configuration"""
@@ -80,13 +95,45 @@ class ZerePyAgent:
                 prompt_parts.append("\nYour key traits are:")
                 prompt_parts.extend(f"- {trait}" for trait in self.traits)
 
-            if self.examples:
+            if self.examples or self.example_accounts:
                 prompt_parts.append("\nHere are some examples of your style (Please avoid repeating any of these):")
-                prompt_parts.extend(f"- {example}" for example in self.examples)
+                if self.examples:
+                    prompt_parts.extend(f"- {example}" for example in self.examples)
+
+                if self.example_accounts:
+                    for example_account in self.example_accounts:
+                        tweets = self.connection_manager.perform_action(
+                            connection_name="twitter",
+                            action_name="get-latest-tweets",
+                            params=[example_account]
+                        )
+                        if tweets:
+                            prompt_parts.extend(f"- {tweet['text']}" for tweet in tweets)
 
             self._system_prompt = "\n".join(prompt_parts)
 
         return self._system_prompt
+    
+    def _adjust_weights_for_time(self, current_hour: int, task_weights: list) -> list:
+        weights = task_weights.copy()
+        
+        # Reduce tweet frequency during night hours (1 AM - 5 AM)
+        if 1 <= current_hour <= 5:
+            weights = [
+                weight * self.time_based_multipliers.get("tweet_night_multiplier", 0.4) if task["name"] == "post-tweet"
+                else weight
+                for weight, task in zip(weights, self.tasks)
+            ]
+            
+        # Increase engagement frequency during day hours (8 AM - 8 PM) (peak hours?🤔)
+        if 8 <= current_hour <= 20:
+            weights = [
+                weight * self.time_based_multipliers.get("engagement_day_multiplier", 1.5) if task["name"] in ("reply-to-tweet", "like-tweet")
+                else weight
+                for weight, task in zip(weights, self.tasks)
+            ]
+        
+        return weights
 
     def prompt_llm(self, prompt: str, system_prompt: str = None) -> str:
         """Generate text using the configured LLM provider"""
@@ -100,6 +147,15 @@ class ZerePyAgent:
 
     def perform_action(self, connection: str, action: str, **kwargs) -> None:
         return self.connection_manager.perform_action(connection, action, **kwargs)
+    
+    def select_action(self, use_time_based_weights: bool = False) -> dict:
+        task_weights = [weight for weight in self.task_weights.copy()]
+        
+        if use_time_based_weights:
+            current_hour = datetime.now().hour
+            task_weights = self._adjust_weights_for_time(current_hour, task_weights)
+        
+        return random.choices(self.tasks, weights=task_weights, k=1)[0]
 
     def loop(self):
         """Main agent loop for autonomous behavior"""
@@ -116,8 +172,6 @@ class ZerePyAgent:
             logger.info(f"{i}...")
             time.sleep(1)
 
-        last_tweet_time = 0
-
         try:
             while True:
                 success = False
@@ -125,106 +179,31 @@ class ZerePyAgent:
                     # REPLENISH INPUTS
                     # TODO: Add more inputs to complexify agent behavior
                     if "timeline_tweets" not in self.state or self.state["timeline_tweets"] is None or len(self.state["timeline_tweets"]) == 0:
-                        logger.info("\n👀 READING TIMELINE")
-                        self.state["timeline_tweets"] = self.connection_manager.perform_action(
-                            connection_name="twitter",
-                            action_name="read-timeline",
-                            params=[]
-                        )
+                        if any("tweet" in task["name"] for task in self.tasks):
+                            logger.info("\n👀 READING TIMELINE")
+                            self.state["timeline_tweets"] = self.connection_manager.perform_action(
+                                connection_name="twitter",
+                                action_name="read-timeline",
+                                params=[]
+                            )
+
+                    if "room_info" not in self.state or self.state["room_info"] is None:
+                        if any("echochambers" in task["name"] for task in self.tasks):
+                            logger.info("\n👀 READING ECHOCHAMBERS ROOM INFO")
+                            self.state["room_info"] = self.connection_manager.perform_action(
+                                connection_name="echochambers",
+                                action_name="get-room-info",
+                                params={}
+                            )
 
                     # CHOOSE AN ACTION
                     # TODO: Add agentic action selection
-                    action = random.choices(self.tasks, weights=self.task_weights, k=1)[0]
+                    
+                    action = self.select_action(use_time_based_weights=self.use_time_based_weights)
                     action_name = action["name"]
 
                     # PERFORM ACTION
-                    if action_name == "post-tweet":
-                        # Check if it's time to post a new tweet
-                        current_time = time.time()
-                        if current_time - last_tweet_time >= self.tweet_interval:
-                            logger.info("\n📝 GENERATING NEW TWEET")
-                            print_h_bar()
-
-                            prompt = ("Generate an engaging tweet. Don't include any hashtags, links or emojis. Keep it under 280 characters."
-                                    f"The tweets should be pure commentary, do not shill any coins or projects apart from {self.name}. Do not repeat any of the"
-                                    "tweets that were given as example. Avoid the words AI and crypto.")
-                            tweet_text = self.prompt_llm(prompt)
-
-                            if tweet_text:
-                                logger.info("\n🚀 Posting tweet:")
-                                logger.info(f"'{tweet_text}'")
-                                self.connection_manager.perform_action(
-                                    connection_name="twitter",
-                                    action_name="post-tweet",
-                                    params=[tweet_text]
-                                )
-                                last_tweet_time = current_time
-                                success = True
-                                logger.info("\n✅ Tweet posted successfully!")
-                        else:
-                            logger.info("\n👀 Delaying post until tweet interval elapses...")
-                            print_h_bar()
-                            continue
-
-                    elif action_name == "reply-to-tweet":
-                        if "timeline_tweets" in self.state and self.state["timeline_tweets"] is not None and len(self.state["timeline_tweets"]) > 0:
-                            # Get next tweet from inputs
-                            tweet = self.state["timeline_tweets"].pop(0)
-                            tweet_id = tweet.get('id')
-                            if not tweet_id:
-                                continue
-
-                            # Check if it's our own tweet using username
-                            is_own_tweet = tweet.get('author_username', '').lower() == self.username
-                            if is_own_tweet:
-                                # pick one of the replies to reply to
-                                replies = self.connection_manager.perform_action(
-                                    connection_name="twitter",
-                                    action_name="get-tweet-replies",
-                                    params=[tweet.get('author_id')]
-                                )
-                                if replies:
-                                    self.state["timeline_tweets"].extend(replies[:self.own_tweet_replies_count])
-                                continue
-
-                            logger.info(f"\n💬 GENERATING REPLY to: {tweet.get('text', '')[:50]}...")
-
-                            # Customize prompt based on whether it's a self-reply
-                            base_prompt = (f"Generate a friendly, engaging reply to this tweet: {tweet.get('text')}. Keep it under 280 characters. Don't include any usernames, hashtags, links or emojis. "
-                                f"The tweets should be pure commentary, do not shill any coins or projects apart from {self.name}. Do not repeat any of the"
-                                "tweets that were given as example. Avoid the words AI and crypto.")
-
-                            system_prompt = self._construct_system_prompt()
-                            reply_text = self.prompt_llm(prompt=base_prompt, system_prompt=system_prompt)
-
-                            if reply_text:
-                                logger.info(f"\n🚀 Posting reply: '{reply_text}'")
-                                self.connection_manager.perform_action(
-                                    connection_name="twitter",
-                                    action_name="reply-to-tweet",
-                                    params=[tweet_id, reply_text]
-                                )
-                                success = True
-                                logger.info("✅ Reply posted successfully!")
-
-                    elif action_name == "like-tweet":
-                        if "timeline_tweets" in self.state and self.state["timeline_tweets"] is not None and len(self.state["timeline_tweets"]) > 0:
-                            # Get next tweet from inputs
-                            tweet = self.state["timeline_tweets"].pop(0)
-                            tweet_id = tweet.get('id')
-                            if not tweet_id:
-                                continue
-
-                            logger.info(f"\n👍 LIKING TWEET: {tweet.get('text', '')[:50]}...")
-
-                            self.connection_manager.perform_action(
-                                connection_name="twitter",
-                                action_name="like-tweet",
-                                params=[tweet_id]
-                            )
-                            success = True
-                            logger.info("✅ Tweet liked successfully!")
-
+                    success = execute_action(self, action_name)
 
                     logger.info(f"\n⏳ Waiting {self.loop_delay} seconds before next loop...")
                     print_h_bar()

@@ -15,6 +15,9 @@
     "This is an example tweet.",
     "This is another example tweet."
   ],
+  "example_accounts": [
+    "0xzerebro"
+  ],
   "loop_delay": 900,
   "config": [
     {
@@ -22,6 +25,11 @@
       "timeline_read_count": 10,
       "own_tweet_replies_count":2,
       "tweet_interval": 5400
+    },
+    {
+      "name": "farcaster",
+      "timeline_read_count": 10,
+      "cast_interval": 60
     },
     {
       "name": "openai",
@@ -32,6 +40,77 @@
       "model": "claude-3-5-sonnet-20241022"
     },
     {
+      "name": "xai",
+      "model": "grok-2-latest"
+    },    
+    {
+      "name": "together",
+      "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
+    },    
+    {
+      "name": "solana",
+      "rpc": "https://api.mainnet-beta.solana.com"
+    },
+    {
+      "name": "eternalai",
+      "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
+      "chain_id": "45762"
+    },
+    {
+      "name": "ollama",
+      "base_url": "http://localhost:11434",
+      "model": "llama3.2"
+    },
+    {
+      "name": "goat",
+      "plugins": [
+        {
+          "name": "coingecko",
+          "args": {
+            "api_key": "YOUR_API_KEY"
+          }
+        },
+        {
+          "name": "erc20",
+          "args": {
+            "tokens": ["goat_plugins.erc20.token.PEPE", "goat_plugins.erc20.token.USDC"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "groq",
+      "model": "llama-3.3-70b-versatile",
+      "temperature": 0.5
+    },
+    {
+      "name": "hyperbolic",
+      "model": "meta-llama/Meta-Llama-3-70B-Instruct"
+    },
+    {
+      "name": "galadriel",
+      "model": "gpt-3.5-turbo"
+    },
+    {
+      "name": "sonic",
+      "network": "mainnet"
+    },
+    {
+      "name": "allora",
+      "chain_slug": "testnet"
+    },
+    {
+      "name": "evm",
+      "network": "ethereum"
+     },
+    
+    {
+      "name": "discord",
+      "message_read_count": 10,
+      "message_emoji_name": "❤️",
+      "server_id": "1234567890"
+    },
+    {
       "name": "firecrawl",
       "enabled": false
     }
@@ -40,5 +119,10 @@
     {"name": "post-tweet", "weight": 1},
     {"name": "reply-to-tweet", "weight": 1},
     {"name": "like-tweet", "weight": 1}
-  ]
+  ],
+  "use_time_based_weights": false,
+  "time_based_multipliers": {
+    "tweet_night_multiplier": 0.4,
+    "engagement_day_multiplier": 1.5
+  }
 }

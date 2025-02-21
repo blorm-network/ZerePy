@@ -1,25 +1,25 @@
 import logging
 import os
 from typing import Dict, Any
-from dotenv import load_dotenv, set_key
-from anthropic import Anthropic, NotFoundError
+from openai import OpenAI
+from dotenv import set_key, load_dotenv
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 
-logger = logging.getLogger("connections.anthropic_connection")
+logger = logging.getLogger("connections.XAI_connection")
 
-class AnthropicConnectionError(Exception):
-    """Base exception for Anthropic connection errors"""
+class XAIConnectionError(Exception):
+    """Base exception for XAI connection errors"""
     pass
 
-class AnthropicConfigurationError(AnthropicConnectionError):
-    """Raised when there are configuration/credential issues"""
+class XAIConfigurationError(XAIConnectionError):
+    """Raised when there are configuration/credential issues with XAI"""
     pass
 
-class AnthropicAPIError(AnthropicConnectionError):
-    """Raised when Anthropic API requests fail"""
+class XAIAPIError(XAIConnectionError):
+    """Raised when XAI API requests fail"""
     pass
 
-class AnthropicConnection(BaseConnection):
+class XAIConnection(BaseConnection):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self._client = None
@@ -29,7 +29,7 @@ class AnthropicConnection(BaseConnection):
         return True
 
     def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Anthropic configuration from JSON"""
+        """Validate XAI configuration from JSON"""
         required_fields = ["model"]
         missing_fields = [field for field in required_fields if field not in config]
         
@@ -42,16 +42,16 @@ class AnthropicConnection(BaseConnection):
         return config
 
     def register_actions(self) -> None:
-        """Register available Anthropic actions"""
+        """Register available XAI actions"""
         self.actions = {
             "generate-text": Action(
                 name="generate-text",
                 parameters=[
                     ActionParameter("prompt", True, str, "The input prompt for text generation"),
-                    ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
+                    ActionParameter("system_prompt", False, str, "System prompt to guide the model"),
                     ActionParameter("model", False, str, "Model to use for generation")
                 ],
-                description="Generate text using Anthropic models"
+                description="Generate text using XAI models"
             ),
             "check-model": Action(
                 name="check-model",
@@ -63,47 +63,50 @@ class AnthropicConnection(BaseConnection):
             "list-models": Action(
                 name="list-models",
                 parameters=[],
-                description="List all available Anthropic models"
+                description="List all available XAI models"
             )
         }
 
-    def _get_client(self) -> Anthropic:
-        """Get or create Anthropic client"""
+    def _get_client(self) -> OpenAI:
+        """Get or create XAI client using OpenAI's client with custom base URL"""
         if not self._client:
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+            api_key = os.getenv("XAI_API_KEY")
             if not api_key:
-                raise AnthropicConfigurationError("Anthropic API key not found in environment")
-            self._client = Anthropic(api_key=api_key)
+                raise XAIConfigurationError("XAI API key not found in environment")
+            self._client = OpenAI(
+                api_key=api_key,
+                base_url="https://api.x.ai/v1",
+            )
         return self._client
 
     def configure(self) -> bool:
-        """Sets up Anthropic API authentication"""
-        logger.info("\n🤖 ANTHROPIC API SETUP")
+        """Sets up XAI API authentication"""
+        logger.info("\n🤖 XAI API SETUP")
 
         if self.is_configured():
-            logger.info("\nAnthropic API is already configured.")
+            logger.info("\n XAI API is already configured.")
             response = input("Do you want to reconfigure? (y/n): ")
             if response.lower() != 'y':
                 return True
 
-        logger.info("\n📝 To get your Anthropic API credentials:")
-        logger.info("1. Go to https://console.anthropic.com/settings/keys")
-        logger.info("2. Create a new API key.")
+        logger.info("\n📝 To get your XAI API credentials:")
+        logger.info("1. Go to the XAI developer portal (assuming one exists)")
+        logger.info("2. Create a new API key for your project.")
         
-        api_key = input("\nEnter your Anthropic API key: ")
+        api_key = input("\nEnter your XAI API key: ")
 
         try:
             if not os.path.exists('.env'):
                 with open('.env', 'w') as f:
                     f.write('')
 
-            set_key('.env', 'ANTHROPIC_API_KEY', api_key)
+            set_key('.env', 'XAI_API_KEY', api_key)
             
-            # Validate the API key
-            client = Anthropic(api_key=api_key)
+            # Validate the API key by trying to list models
+            client = OpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
             client.models.list()
 
-            logger.info("\n✅ Anthropic API configuration successfully saved!")
+            logger.info("\n✅ XAI API configuration successfully saved!")
             logger.info("Your API key has been stored in the .env file.")
             return True
 
@@ -112,14 +115,14 @@ class AnthropicConnection(BaseConnection):
             return False
 
     def is_configured(self, verbose = False) -> bool:
-        """Check if Anthropic API key is configured and valid"""
+        """Check if XAI API key is configured and valid"""
         try:
             load_dotenv()
-            api_key = os.getenv('ANTHROPIC_API_KEY')
+            api_key = os.getenv('XAI_API_KEY')
             if not api_key:
                 return False
 
-            client = Anthropic(api_key=api_key)
+            client = self._get_client()
             client.models.list()
             return True
             
@@ -128,8 +131,8 @@ class AnthropicConnection(BaseConnection):
                 logger.debug(f"Configuration check failed: {e}")
             return False
 
-    def generate_text(self, prompt: str, system_prompt: str, model: str = None, **kwargs) -> str:
-        """Generate text using Anthropic models"""
+    def generate_text(self, prompt: str, system_prompt: str = None, model: str = None, **kwargs) -> str:
+        """Generate text using XAI models"""
         try:
             client = self._get_client()
             
@@ -137,60 +140,45 @@ class AnthropicConnection(BaseConnection):
             if not model:
                 model = self.config["model"]
 
-            message = client.messages.create(
+            response = client.chat.completions.create(
                 model=model,
-                max_tokens=1000,
-                temperature=0,
-                system=system_prompt,
                 messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            }
-                        ]
-                    }
+                    {"role": "system", "content": system_prompt} if system_prompt else {"role": "system", "content": ""},
+                    {"role": "user", "content": prompt},
                 ]
             )
-            return message.content[0].text
+            return response.choices[0].message.content
             
         except Exception as e:
-            raise AnthropicAPIError(f"Text generation failed: {e}")
+            raise XAIAPIError(f"Text generation failed: {e}")
 
     def check_model(self, model: str, **kwargs) -> bool:
         """Check if a specific model is available"""
         try:
             client = self._get_client()
             try:
-                client.models.retrieve(model_id=model)
+                client.models.retrieve(model=model)
                 return True
-            except NotFoundError:
-                logging.error("Model not found.")
+            except Exception:
                 return False
-            except Exception as e:
-                raise AnthropicAPIError(f"Model check failed: {e}")
-                
         except Exception as e:
-            raise AnthropicAPIError(f"Model check failed: {e}")
+            raise XAIAPIError(f"Model check failed: {e}")
 
     def list_models(self, **kwargs) -> None:
-        """List all available Anthropic models"""
+        """List all available XAI models"""
         try:
             client = self._get_client()
-            response = client.models.list().data
-            model_ids = [model.id for model in response]
-
-            logger.info("\nCLAUDE MODELS:")
-            for i, model in enumerate(model_ids):
-                logger.info(f"{i+1}. {model}")
+            models = client.models.list().data
+            
+            logger.info("\nGROK MODELS:")
+            for i, model in enumerate(models):
+                logger.info(f"{i+1}. {model.id}")
                 
         except Exception as e:
-            raise AnthropicAPIError(f"Listing models failed: {e}")
+            raise XAIAPIError(f"Listing models failed: {e}")
 
     def perform_action(self, action_name: str, kwargs) -> Any:
-        """Execute a Twitter action with validation"""
+        """Execute an action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
 

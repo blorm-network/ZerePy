@@ -2,24 +2,26 @@ import logging
 import os
 from typing import Dict, Any
 from dotenv import load_dotenv, set_key
-from anthropic import Anthropic, NotFoundError
+from together import Together
+from together.types.models import ModelObject, ModelType
+
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 
-logger = logging.getLogger("connections.anthropic_connection")
+logger = logging.getLogger("connections.together_ai_connection")
 
-class AnthropicConnectionError(Exception):
-    """Base exception for Anthropic connection errors"""
+class TogetherAIConnectionError(Exception):
+    """Base exception for Together AI connection errors"""
     pass
 
-class AnthropicConfigurationError(AnthropicConnectionError):
+class TogetherAIConfigurationError(TogetherAIConnectionError):
     """Raised when there are configuration/credential issues"""
     pass
 
-class AnthropicAPIError(AnthropicConnectionError):
-    """Raised when Anthropic API requests fail"""
+class TogetherAIAPIError(TogetherAIConnectionError):
+    """Raised when Together AI API requests fail"""
     pass
 
-class AnthropicConnection(BaseConnection):
+class TogetherAIConnection(BaseConnection):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self._client = None
@@ -29,7 +31,7 @@ class AnthropicConnection(BaseConnection):
         return True
 
     def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate Anthropic configuration from JSON"""
+        """Validate Together AI configuration from JSON"""
         required_fields = ["model"]
         missing_fields = [field for field in required_fields if field not in config]
         
@@ -42,7 +44,7 @@ class AnthropicConnection(BaseConnection):
         return config
 
     def register_actions(self) -> None:
-        """Register available Anthropic actions"""
+        """Register available Together AI actions"""
         self.actions = {
             "generate-text": Action(
                 name="generate-text",
@@ -51,7 +53,7 @@ class AnthropicConnection(BaseConnection):
                     ActionParameter("system_prompt", True, str, "System prompt to guide the model"),
                     ActionParameter("model", False, str, "Model to use for generation")
                 ],
-                description="Generate text using Anthropic models"
+                description="Generate text using Together AI models"
             ),
             "check-model": Action(
                 name="check-model",
@@ -63,47 +65,47 @@ class AnthropicConnection(BaseConnection):
             "list-models": Action(
                 name="list-models",
                 parameters=[],
-                description="List all available Anthropic models"
+                description="List all available Together AI models"
             )
         }
 
-    def _get_client(self) -> Anthropic:
-        """Get or create Anthropic client"""
+    def _get_client(self) -> Together:
+        """Get or create Together AI client"""
         if not self._client:
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+            api_key = os.getenv("TOGETHER_API_KEY")
             if not api_key:
-                raise AnthropicConfigurationError("Anthropic API key not found in environment")
-            self._client = Anthropic(api_key=api_key)
+                raise TogetherAIConfigurationError("Together API key not found in environment")
+            self._client = Together(api_key=api_key)
         return self._client
 
     def configure(self) -> bool:
-        """Sets up Anthropic API authentication"""
-        logger.info("\n🤖 ANTHROPIC API SETUP")
+        """Sets up Together AI API authentication"""
+        logger.info("\n🤖 TOGETHER AI API SETUP")
 
         if self.is_configured():
-            logger.info("\nAnthropic API is already configured.")
+            logger.info("\nTogether AI API is already configured.")
             response = input("Do you want to reconfigure? (y/n): ")
             if response.lower() != 'y':
                 return True
 
-        logger.info("\n📝 To get your Anthropic API credentials:")
-        logger.info("1. Go to https://console.anthropic.com/settings/keys")
-        logger.info("2. Create a new API key.")
-        
-        api_key = input("\nEnter your Anthropic API key: ")
+        logger.info("\n📝 To get your Together AI API credentials:")
+        logger.info("1. Visit https://api.together.ai and sign up or log in.")
+        logger.info("2. Navigate to the API Keys section.")
+        logger.info("3. Create a new API key or use an existing one.")
+
+        api_key = input("\nEnter your Together AI API key: ")
 
         try:
             if not os.path.exists('.env'):
                 with open('.env', 'w') as f:
                     f.write('')
 
-            set_key('.env', 'ANTHROPIC_API_KEY', api_key)
+            set_key('.env', 'TOGETHER_API_KEY', api_key)
             
-            # Validate the API key
-            client = Anthropic(api_key=api_key)
+            # Validate the API key by trying to list models
+            client = Together(api_key=api_key)
             client.models.list()
-
-            logger.info("\n✅ Anthropic API configuration successfully saved!")
+            logger.info("\n✅ Together AI API configuration successfully saved!")
             logger.info("Your API key has been stored in the .env file.")
             return True
 
@@ -111,15 +113,15 @@ class AnthropicConnection(BaseConnection):
             logger.error(f"Configuration failed: {e}")
             return False
 
-    def is_configured(self, verbose = False) -> bool:
-        """Check if Anthropic API key is configured and valid"""
+    def is_configured(self, verbose=False) -> bool:
+        """Check if Together AI API key is configured and valid"""
         try:
             load_dotenv()
-            api_key = os.getenv('ANTHROPIC_API_KEY')
+            api_key = os.getenv('TOGETHER_API_KEY')
             if not api_key:
                 return False
 
-            client = Anthropic(api_key=api_key)
+            client = Together(api_key=api_key)
             client.models.list()
             return True
             
@@ -129,7 +131,7 @@ class AnthropicConnection(BaseConnection):
             return False
 
     def generate_text(self, prompt: str, system_prompt: str, model: str = None, **kwargs) -> str:
-        """Generate text using Anthropic models"""
+        """Generate text using Together AI models"""
         try:
             client = self._get_client()
             
@@ -137,60 +139,45 @@ class AnthropicConnection(BaseConnection):
             if not model:
                 model = self.config["model"]
 
-            message = client.messages.create(
+            messages = [{"role": "user", "content": prompt},{"role": "system", "content": system_prompt},] 
+
+            completion = client.chat.completions.create(
                 model=model,
-                max_tokens=1000,
-                temperature=0,
-                system=system_prompt,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "text",
-                                "text": prompt
-                            }
-                        ]
-                    }
-                ]
+                messages=messages,
             )
-            return message.content[0].text
+
+            return completion.choices[0].message.content
             
         except Exception as e:
-            raise AnthropicAPIError(f"Text generation failed: {e}")
+            raise TogetherAIAPIError(f"Text generation failed: {e}")
 
     def check_model(self, model: str, **kwargs) -> bool:
-        """Check if a specific model is available"""
         try:
             client = self._get_client()
-            try:
-                client.models.retrieve(model_id=model)
-                return True
-            except NotFoundError:
-                logging.error("Model not found.")
-                return False
-            except Exception as e:
-                raise AnthropicAPIError(f"Model check failed: {e}")
-                
+            models = client.models.list()
+            model_names = model_names = [
+                m.id for m in models 
+                if m.type in {ModelType.CHAT.value, ModelType.LANGUAGE.value}
+            ]
+            return model in model_names
         except Exception as e:
-            raise AnthropicAPIError(f"Model check failed: {e}")
+            raise TogetherAIAPIError(f"Checking model failed: {e}")
 
     def list_models(self, **kwargs) -> None:
-        """List all available Anthropic models"""
+        """List all available Together AI models"""
         try:
             client = self._get_client()
-            response = client.models.list().data
-            model_ids = [model.id for model in response]
+            models = client.models.list()
+            logger.info("\nTOGETHER AI MODELS:")
+            for i, model in enumerate(models, start=1):
+                if model.type in {ModelType.CHAT.value, ModelType.LANGUAGE.value}:
+                    logger.info(f"{i}. {model.id}")
 
-            logger.info("\nCLAUDE MODELS:")
-            for i, model in enumerate(model_ids):
-                logger.info(f"{i+1}. {model}")
-                
         except Exception as e:
-            raise AnthropicAPIError(f"Listing models failed: {e}")
-
+            raise TogetherAIAPIError(f"Listing models failed: {e}")
+    
     def perform_action(self, action_name: str, kwargs) -> Any:
-        """Execute a Twitter action with validation"""
+        """Execute a Together AI action with validation"""
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
 

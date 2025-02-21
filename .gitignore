@@ -17,3 +17,4 @@ agents/*.json
 
 # macOS
 .DS_Store
+.codegpt

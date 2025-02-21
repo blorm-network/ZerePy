@@ -27,8 +27,9 @@
     },
     {
       "name": "eternalai",
-      "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
-      "chain_id": "8453",
+      "model": "DeepSeek-R1-Distill-Llama-70B",
+      "chain_id": "45762",
+      "stream": true,
       "agent_id": 1711,
       "contract_address": "0xAed016e060e2fFE3092916b1650Fc558D62e1CCC",
       "rpc_url": "https://mainnet.base.org/"

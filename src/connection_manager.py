@@ -21,6 +21,7 @@ from src.connections.ethereum_connection import EthereumConnection
 from src.connections.together_connection import TogetherAIConnection
 from src.connections.evm_connection import EVMConnection
 from src.connections.perplexity_connection import PerplexityConnection
+from src.connections.firecrawl_connection import FirecrawlConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -72,7 +73,10 @@ class ConnectionManager:
         elif class_name == "evm":
             return EVMConnection
         elif class_name == "perplexity":
-            return PerplexityConnection
+            return PerplexityConnection        
+        elif class_name == "firecrawl":
+            return FirecrawlConnection
+
         return None
 
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:

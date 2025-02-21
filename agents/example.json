@@ -109,6 +109,9 @@
       "message_read_count": 10,
       "message_emoji_name": "❤️",
       "server_id": "1234567890"
+    },
+    {
+      "name": "firecrawl"
     }
   ],
   "tasks": [

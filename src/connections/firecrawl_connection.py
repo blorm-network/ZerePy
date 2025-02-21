@@ -32,7 +32,7 @@ class FirecrawlConnection(BaseConnection):
 
     def validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Validate Firecrawl configuration from JSON"""
-        required_fields = ["enabled"]
+        required_fields = []
         missing_fields = [field for field in required_fields if field not in config]
         
         if missing_fields:
@@ -113,9 +113,6 @@ class FirecrawlConnection(BaseConnection):
 
     def scrape_page(self, url: str) -> str:
         """Scrape a page for text data"""
-        if not self.config["enabled"]:
-            #logger.warning("Firecrawl scraping is disabled in the configuration.")
-            return "" 
         try:
             client = self._get_client()
             response = client.scrape_url(url,  params={'formats': ['markdown']})  

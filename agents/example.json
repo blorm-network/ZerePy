@@ -111,8 +111,7 @@
       "server_id": "1234567890"
     },
     {
-      "name": "firecrawl",
-      "enabled": false
+      "name": "firecrawl"
     }
   ],
   "tasks": [

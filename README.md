@@ -284,7 +284,7 @@ Each plugin has its own configuration options that can be specified in the agent
     - Custom slippage settings
     - Token swaps via Sonic DEX
     - Network switching (mainnet/testnet)
-
+  - DeBridge - Bridge tokens across multiple chains
 - EternalAI
   - Transform agents to smart contracts
   - Deploy on 10+ blockchains

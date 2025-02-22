@@ -292,6 +292,9 @@ class SolanaConnection(BaseConnection):
                 logger.debug(f"Solana Configuration validation failed: {error_msg}")
             return False
 
+    def get_address(self) -> str:
+        return str(self._get_wallet().pubkey())
+
     def transfer(
         self, to_address: str, amount: float, token_mint: Optional[str] = None
     ) -> str:

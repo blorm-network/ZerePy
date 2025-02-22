@@ -7,25 +7,26 @@ logger = logging.getLogger("actions.debridge_actions")
 def create_bridge_tx(agent, **kwargs):
     """Create Bridge TX using Debridge"""
     try:
-        required_args = ['srcChainId', 'srcChainTokenIn', 'srcChainTokenInAmount', 'dstChainId', 'dstChainTokenOut', 'dstChainTokenOutAmount', 'dstChainTokenOutRecipient', 'srcChainOrderAuthorityAddress', 'dstChainOrderAuthorityAddress']
+        required_args = ['connection', 'srcChainId', 'srcChainTokenIn', 'srcChainTokenInAmount', 'dstChainId', 'dstChainTokenOut', 'dstChainTokenOutRecipient']
         for arg in required_args:
             if arg not in kwargs:
                 logger.error(f"Missing required argument: {arg}")
                 return None
 
         response = agent.connection_manager.connections["debridge"].create_bridge_tx(
+            connection=kwargs['connection'],
             srcChainId=kwargs['srcChainId'],
             srcChainTokenIn=kwargs['srcChainTokenIn'],
             srcChainTokenInAmount=kwargs['srcChainTokenInAmount'],
             dstChainId=kwargs['dstChainId'],
             dstChainTokenOut=kwargs['dstChainTokenOut'],
-            dstChainTokenOutAmount=kwargs['dstChainTokenOutAmount'],
             dstChainTokenOutRecipient=kwargs['dstChainTokenOutRecipient'],
-            srcChainOrderAuthorityAddress=kwargs['srcChainOrderAuthorityAddress'],
-            dstChainOrderAuthorityAddress=kwargs['dstChainOrderAuthorityAddress'],
+            dstChainTokenOutAmount=kwargs.get('dstChainTokenOutAmount', "auto"),
+            dstChainOrderAuthorityAddress=kwargs.get('dstChainOrderAuthorityAddress'),
             affiliateFeeRecipient=kwargs.get('affiliateFeeRecipient'),
             prependOperatingExpense=kwargs.get('prependOperatingExpense', True),
-            affiliateFeePercent=kwargs.get('affiliateFeePercent', 0)
+            affiliateFeePercent=kwargs.get('affiliateFeePercent', 0),
+            dlnHook=kwargs.get('dlnHook')
         )
         return response
     except Exception as e:

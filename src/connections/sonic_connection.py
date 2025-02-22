@@ -58,6 +58,14 @@ class SonicConnection(BaseConnection):
             except Exception as e:
                 logger.warning(f"Could not get chain ID: {e}")
 
+    def get_address(self) -> str:
+        try:
+            private_key = os.getenv('SONIC_PRIVATE_KEY')
+            account = self._web3.eth.account.from_key(private_key)
+            return f"Your Sonic address: {account.address}"
+        except Exception as e:
+            return f"Failed to get address: {str(e)}"
+
     @property
     def is_llm_provider(self) -> bool:
         return False

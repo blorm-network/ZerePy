@@ -44,6 +44,7 @@ class DebridgeConnection(BaseConnection):
             name='create-bridge-tx',
             description='Create Bridge TX using Debridge',
             parameters=[
+                ActionParameter(name='connection', type=str, required=True, description='Connection name'),
                 ActionParameter(name='srcChainId', type=int,
                                 required=True, description='Source chain ID'),
                 ActionParameter(name='srcChainTokenIn', type=str,
@@ -54,13 +55,11 @@ class DebridgeConnection(BaseConnection):
                                 required=True, description='Destination chain ID'),
                 ActionParameter(name='dstChainTokenOut', type=str, required=True,
                                 description='Destination chain token address'),
-                ActionParameter(name='dstChainTokenOutAmount', type=str,
-                                required=True, description='Amount of destination chain token'),
                 ActionParameter(name='dstChainTokenOutRecipient', type=str, required=True,
                                 description='Recipient address on destination chain'),
-                ActionParameter(name='srcChainOrderAuthorityAddress', type=str, required=True,
-                                description='Source chain order authority address'),
-                ActionParameter(name='dstChainOrderAuthorityAddress', type=str, required=True,
+                ActionParameter(name='dstChainTokenOutAmount', type=str,
+                                required=False, description='Amount of destination chain token'),
+                ActionParameter(name='dstChainOrderAuthorityAddress', type=str, required=False,
                                 description='Destination chain order authority address'),
                 ActionParameter(name='affiliateFeeRecipient', type=str, required=False,
                                 description='Affiliate fee recipient address'),
@@ -146,13 +145,13 @@ class DebridgeConnection(BaseConnection):
 
     def create_bridge_tx(
             self, 
+            connection: str,
             srcChainId: int, 
             srcChainTokenIn: str, 
             dstChainId: int, 
             dstChainTokenOut: str, 
             dstChainTokenOutRecipient: str, 
-            srcChainOrderAuthorityAddress: str, 
-            dstChainOrderAuthorityAddress: str, 
+            dstChainOrderAuthorityAddress: str = None, 
             affiliateFeeRecipient: str = None,
             prependOperatingExpense: bool = True,
             srcChainTokenInAmount: str = "auto",
@@ -162,6 +161,9 @@ class DebridgeConnection(BaseConnection):
         ) -> Dict:
         """Create Bridge TX using Debridge"""
         try:
+            connection_class: BaseConnection = self.connections[connection]
+            srcChainOrderAuthorityAddress = connection_class.get_address().split(" ")[-1]
+            logger.info(srcChainOrderAuthorityAddress)
             params = {
                 "srcChainId": srcChainId,
                 "srcChainTokenIn": srcChainTokenIn,

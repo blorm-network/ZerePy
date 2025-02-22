@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional
 from dotenv import load_dotenv, set_key
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
+from src.helpers.sonic.machfi import MachFi
 from src.constants.abi import ERC20_ABI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 from src.constants.networks import SONIC_NETWORKS
@@ -22,6 +23,9 @@ class SonicConnection(BaseConnection):
     def __init__(self, config: Dict[str, Any]):
         logger.info("Initializing Sonic connection...")
         self._web3 = None
+
+        # Load environment variables at initialization
+        load_dotenv()
         
         # Get network configuration
         network = config.get("network", "mainnet")
@@ -37,6 +41,20 @@ class SonicConnection(BaseConnection):
         self.ERC20_ABI = ERC20_ABI
         self.NATIVE_TOKEN = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
         self.aggregator_api = "https://aggregator-api.kyberswap.com/sonic/api/v1"
+
+
+        private_key = os.getenv('SONIC_PRIVATE_KEY')
+        account = self._web3.eth.account.from_key(private_key)
+
+        # MachFi token mapping: token -> cToken
+        self.token_mapping = {
+            "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE": "0x9F5d9f2FDDA7494aA58c90165cF8E6B070Fe92e6", # cSonic
+            "0x29219dd400f2Bf60E5a23d13Be72B486D4038894": "0xC84F54B2dB8752f80DEE5b5A48b64a2774d2B445", # cUSDC
+            "0x50c42dEAcD8Fc9773493ED674b675bE577f2634b": "0x15eF11b942Cc14e582797A61e95D47218808800D", # cWETH
+            "0xE5DA20F15420aD15DE0fa650600aFc998bbE3955": "0xd3DCe716f3eF535C5Ff8d041c1A41C3bd89b97aE" # cStS
+        }
+
+        self.machfi = MachFi(self._web3, self.token_mapping, account)
 
     def _get_explorer_link(self, tx_hash: str) -> str:
         """Generate block explorer link for transaction"""
@@ -141,6 +159,22 @@ class SonicConnection(BaseConnection):
                     ActionParameter("slippage", False, float, "Max slippage percentage")
                 ],
                 description="Swap tokens"
+            ),
+            "deposit": Action(
+                name="deposit",
+                parameters=[
+                    ActionParameter("token_address", True, str, "Token address to deposit"),
+                    ActionParameter("amount", True, float, "Amount to deposit")
+                ],
+                description="Deposit tokens into a MachFi protocol"
+            ),
+            "withdraw": Action(
+                name="withdraw",
+                parameters=[
+                    ActionParameter("token_address", True, str, "Token address to withdraw"),
+                    ActionParameter("amount", True, float, "Amount to withdraw")
+                ],
+                description="Withdraw tokens from a MachFi protocol"
             )
         }
 
@@ -370,6 +404,41 @@ class SonicConnection(BaseConnection):
                 
         except Exception as e:
             logger.error(f"Approval failed: {e}")
+            raise
+
+    def deposit(self, token_address: str, amount: int) -> str:
+        """Deposit tokens into a MachFi protocol (look to optimize yield here when depositing - choose highest yield protocol)""" 
+        try:
+            private_key = os.getenv('SONIC_PRIVATE_KEY')
+            account = self._web3.eth.account.from_key(private_key)
+            
+            # Check token balance before proceeding
+            current_balance = self.get_balance(
+                address=account.address,
+                token_address=None if token_address.lower() == self.NATIVE_TOKEN.lower() else token_address
+            )
+            
+            if current_balance < amount:
+                raise ValueError(f"Insufficient balance. Required: {amount}, Available: {current_balance}")
+            
+            # mint as collateral logic
+            tx_hash = self.machfi.mint_as_collateral(token_address, amount)
+
+            logger.info(f"Mint as collateral transaction sent: {self._get_explorer_link(tx_hash)}")
+            return f"🔄 Mint as collateral transaction sent: {self._get_explorer_link(tx_hash)}"
+        
+        except Exception as e:
+            logger.error(f"Mint as collateral failed: {e}")
+            raise
+
+    def withdraw(self, token_address: str, amount: int) -> str:
+        """Withdraw tokens from a MachFi protocol"""
+        try:
+            tx_hash = self.machfi.withdraw(token_address, amount)
+            logger.info(f"Withdraw as collateral transaction sent: {self._get_explorer_link(tx_hash)}")
+            return f"🔄 Withdraw as collateral transaction sent: {self._get_explorer_link(tx_hash)}"
+        except Exception as e:
+            logger.error(f"Withdraw as collateral failed: {e}")
             raise
 
     def swap(self, token_in: str, token_out: str, amount: float, slippage: float = 0.5) -> str:

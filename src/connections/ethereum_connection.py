@@ -650,14 +650,7 @@ class EthereumConnection(BaseConnection):
             tx["nonce"] = self._web3.eth.get_transaction_count(account.address)
             tx["gasPrice"] = self._web3.eth.gas_price
             tx["chainId"] = self._web3.eth.chain_id
-            
-            if data["estimation"]["srcChainTokenIn"]["address"] != ZERO_ADDRESS:
-                self._handle_token_approval(
-                    data["estimation"]["srcChainTokenIn"]["address"],
-                    tx["to"],
-                    int(data["estimation"]["srcChainTokenIn"]["amount"])
-                )
-            
+
             if "value" in tx:
                 tx["value"] = int(tx["value"])
             try:

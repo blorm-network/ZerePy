@@ -212,6 +212,18 @@ class DebridgeConnection(BaseConnection):
                     data["compute_unit_limit"] = compute_unit_limit
                 tx_url = connection_class.perform_action("send-transaction", data)
             else:
+                if self.pending_tx["tx"]["allowanceTarget"]:
+                    logger.info("The bridge transaction requires approval. \nApproving token...")
+                    
+                    connection_class._handle_token_approval(
+                        token_address=self.pending_tx["estimation"]["srcChainTokenIn"]["address"],
+                        spender_address=self.pending_tx["tx"]["allowanceTarget"],
+                        amount=int(self.pending_tx["tx"]["allowanceValue"])
+                    )
+                    logger.info("Token approved. \nPlease create a new transaction.")
+                    
+                    self.pending_tx = None
+                    return
                 tx_url = connection_class.perform_action("send-transaction", {
                     "tx": json.dumps({
                         "tx": self.pending_tx["tx"], 

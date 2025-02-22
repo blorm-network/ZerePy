@@ -98,17 +98,49 @@ def like_tweet(agent, **kwargs):
 @register_action("respond-to-mentions")
 def respond_to_mentions(agent,**kwargs): #REQUIRES TWITTER PREMIUM PLAN
 
-    filter_str = f"@{agent.username} -is:retweet"
+    accounts_to_listen_to = kwargs.get('accounts_to_listen_to', [])
+    accounts_mentioned = kwargs.get('accounts_mentioned', [])
+    
+    # Get user IDs of accounts to listen to
+    accounts_to_listen_to_ids = []
+    user_ids = agent.connection_manager.perform_action(
+        connection_name="twitter",
+        action_name="get-user-details",
+        params = [[], accounts_to_listen_to]
+    )
+    if user_ids:
+        accounts_to_listen_to_ids = [user.get('id') for user in user_ids]
+
+    # Create filter string to get tweets from accounts_to_listen_to_ids mentioning any of accounts_mentioned
+    if accounts_mentioned:
+        mention_str = " OR ".join([f"@{account}" for account in accounts_mentioned])
+        
+        if accounts_to_listen_to_ids:
+            filter_str = " OR ".join([f"from:{user_id}" for user_id in accounts_to_listen_to_ids])
+            filter_str = f"({filter_str}) ({mention_str}) -is:retweet"
+        else:
+            filter_str = f"({mention_str}) -is:retweet"
+    else:
+        filter_str = ""
+    
+
     stream_function = agent.connection_manager.perform_action(
         connection_name="twitter",
         action_name="stream-tweets",
         params=[filter_str]
     )
+
     def process_tweets():
         for tweet_data in stream_function:
-            tweet_id = tweet_data["id"]
-            tweet_text = tweet_data["text"]
-            agent.logger.info(f"Received a mention: {tweet_text}")
+            try:
+                tweet_id = tweet_data.get("id", "")
+                tweet_text = tweet_data.get("text", "")
+                author_id = tweet_data.get("author_id", "")
+                author_username = tweet_data.get("author_username", "")
+                agent.logger.info(f"Received a mention from @{author_username}: {tweet_text}")            
+            except Exception as e:
+                agent.logger.error(f"Error processing tweet in stream: {str(e)}")
+                continue
 
     processing_thread = threading.Thread(target=process_tweets)
     processing_thread.daemon = True

@@ -24,7 +24,12 @@
       "name": "twitter",
       "timeline_read_count": 10,
       "own_tweet_replies_count":2,
-      "tweet_interval": 5400
+      "tweet_interval": 5400,
+      "respond_to_mentions": {
+        "enabled": false,
+        "accounts_mentioned": ["blormmy"],
+        "accounts_to_listen_to": ["0xzerebro"]
+      }
     },
     {
       "name": "farcaster",
@@ -67,13 +72,20 @@
         {
           "name": "coingecko",
           "args": {
-            "api_key": "YOUR_API_KEY"
+            "api_key": "CG-12BeZ64iSajBLPPz8mfX4uao"
           }
         },
         {
           "name": "erc20",
           "args": {
             "tokens": ["goat_plugins.erc20.token.PEPE", "goat_plugins.erc20.token.USDC"]
+          }
+        },
+        {
+          "name": "uniswap",
+          "args": {
+            "api_key": "KUt2OUR7oT6zpUvoly6Cp4FUwLCtkiZP16fhKW3x",
+            "base_url": "https://trade-api.gateway.uniswap.org/v1"
           }
         }
       ]
@@ -82,10 +94,6 @@
       "name": "groq",
       "model": "llama-3.3-70b-versatile",
       "temperature": 0.5
-    },
-    {
-      "name": "hyperbolic",
-      "model": "meta-llama/Meta-Llama-3-70B-Instruct"
     },
     {
       "name": "galadriel",
@@ -109,6 +117,11 @@
       "message_read_count": 10,
       "message_emoji_name": "❤️",
       "server_id": "1234567890"
+    },
+    {
+      "name": "brain",
+      "model": "claude-3-5-sonnet-20241022",
+      "provider": "anthropic"
     }
   ],
   "tasks": [

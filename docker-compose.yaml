@@ -1,0 +1,51 @@
+version: "3.8"
+services:
+  zerepy:
+    image: ruxdoteth/zerepy:latest
+    container_name: zerepy
+    environment:
+      - ALLORA_API_KEY=${ALLORA_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EternalAI_API_KEY=${EternalAI_API_KEY}
+      - EternalAI_API_URL=${EternalAI_API_URL}
+      - EVM_PRIVATE_KEY=${EVM_PRIVATE_KEY}
+      - FARCASTER_MNEMONIC=${FARCASTER_MNEMONIC}
+      - HYPERBOLIC_API_KEY=${HYPERBOLIC_API_KEY}
+      - GALADRIEL_API_KEY=${GALADRIEL_API_KEY}
+      - GALADRIEL_FINE_TUNE_API_KEY=${GALADRIEL_FINE_TUNE_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - TWITTER_CONSUMER_KEY=${TWITTER_CONSUMER_KEY}
+      - TWITTER_CONSUMER_SECRET=${TWITTER_CONSUMER_SECRET}
+      - TWITTER_ACCESS_TOKEN=${TWITTER_ACCESS_TOKEN}
+      - TWITTER_ACCESS_TOKEN_SECRET=${TWITTER_ACCESS_TOKEN_SECRET}
+      - TWITTER_USER_ID=${TWITTER_USER_ID}
+      - TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
+      - SOLANA_PRIVATE_KEY=${SOLANA_PRIVATE_KEY}
+      - SONIC_PRIVATE_KEY=${SONIC_PRIVATE_KEY}
+      - GOAT_RPC_PROVIDER_URL=${GOAT_RPC_PROVIDER_URL}
+      - GOAT_WALLET_PRIVATE_KEY=${GOAT_WALLET_PRIVATE_KEY}
+      - SOLANA_PRIVATE_KEY=${SOLANA_PRIVATE_KEY}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - XAI_API_KEY=${XAI_API_KEY}
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - DSTACK_SIMULATOR_ENDPOINT=http://tappd:8090
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./.env:/app/.env:ro
+    depends_on:
+      - tappd
+    networks:
+      - zerepy-network
+  tappd:
+    image: phalanetwork/tappd-simulator:latest
+    container_name: tappd
+    ports:
+      - "8090:8090"
+    networks:
+      - zerepy-network
+
+networks:
+  zerepy-network:
+    driver: bridge

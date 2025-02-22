@@ -1,5 +1,7 @@
 import argparse
 from src.cli import ZerePyCLI
+from src.server import start_server
+import logging
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='ZerePy - AI Agent Framework')
@@ -10,10 +12,10 @@ if __name__ == "__main__":
 
     if args.server:
         try:
-            from src.server import start_server
             start_server(host=args.host, port=args.port)
-        except ImportError:
-            print("Server dependencies not installed. Run: poetry install --extras server")
+        except ImportError as e:
+            logging.info(f"Server mode failed: {e}")
+            logging.info("Make sure all dependencies are installed. Run: poetry install")
             exit(1)
     else:
         cli = ZerePyCLI()

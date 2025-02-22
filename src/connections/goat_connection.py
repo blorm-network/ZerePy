@@ -13,6 +13,9 @@ from src.action_handler import register_action
 from goat.classes.plugin_base import PluginBase
 from goat import ToolBase, WalletClientBase, get_tools
 from goat_wallets.web3 import Web3EVMWalletClient
+from web3.middleware.signing import construct_sign_and_send_raw_middleware
+from eth_account.signers.local import LocalAccount
+
 
 logger = logging.getLogger("connections.goat_connection")
 
@@ -262,7 +265,7 @@ class GoatConnection(BaseConnection):
         pass  # We'll register actions after wallet configuration
 
     def _create_wallet(self) -> bool:
-        """Create wallet from environment variables"""
+        """Create wallet from environment variables with proper middleware setup"""
         try:
             load_dotenv()
             rpc_url = os.getenv("GOAT_RPC_PROVIDER_URL")
@@ -277,14 +280,22 @@ class GoatConnection(BaseConnection):
                 logger.error("Failed to connect to RPC provider")
                 return False
 
-            # Test private key by creating account
+            # Create account and set up middleware exactly like example.py
             try:
-                account = Account.from_key(private_key)
-                w3.eth.default_account = account.address
+                if not private_key.startswith("0x"):
+                    private_key = "0x" + private_key
+                    
+                account: LocalAccount = Account.from_key(private_key)
+                w3.eth.default_account = account.address  # Set the default account
+                w3.middleware_onion.add(
+                    construct_sign_and_send_raw_middleware(account)
+                )  # Add middleware
+
                 self._wallet_client = Web3EVMWalletClient(w3)
                 # Register actions now that we have a wallet
                 self._register_actions_with_wallet()
                 return True
+
             except Exception as e:
                 logger.error(f"Invalid private key: {str(e)}")
                 return False

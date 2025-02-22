@@ -260,7 +260,7 @@ class EthereumConnection(BaseConnection):
                 Web3.to_checksum_address(address)
             ).call()
             decimals = contract.functions.decimals().call()
-            return balanqce / (10 ** decimals)
+            return balance / (10 ** decimals)
         else:
             # Get native ETH balance
             balance = self._web3.eth.get_balance(Web3.to_checksum_address(address))
@@ -511,64 +511,64 @@ class EthereumConnection(BaseConnection):
             logger.error(f"Failed to build swap transaction: {str(e)}")
             raise
 
-        def _handle_token_approval(
-            self,
-            token_address: str,
-            spender_address: str,
-            amount: int
-        ) -> Optional[str]:
-            """Handle token approval for spender, returns tx hash if approval needed"""
-            try:
-                private_key = os.getenv('ETH_PRIVATE_KEY')
-                account = self._web3.eth.account.from_key(private_key)
+    def _handle_token_approval(
+        self,
+        token_address: str,
+        spender_address: str,
+        amount: int
+    ) -> Optional[str]:
+        """Handle token approval for spender, returns tx hash if approval needed"""
+        try:
+            private_key = os.getenv('ETH_PRIVATE_KEY')
+            account = self._web3.eth.account.from_key(private_key)
+            
+            token_contract = self._web3.eth.contract(
+                address=Web3.to_checksum_address(token_address),
+                abi=ERC20_ABI
+            )
+            
+            # Check current allowance
+            current_allowance = token_contract.functions.allowance(
+                account.address,
+                spender_address
+            ).call()
+            
+            if current_allowance < amount:
+                # Prepare approval transaction
+                approve_tx = token_contract.functions.approve(
+                    spender_address,
+                    amount
+                ).build_transaction({
+                    'from': account.address,
+                    'nonce': self._web3.eth.get_transaction_count(account.address),
+                    'gasPrice': self._web3.eth.gas_price,
+                    'chainId': self.chain_id
+                })
                 
-                token_contract = self._web3.eth.contract(
-                    address=Web3.to_checksum_address(token_address),
-                    abi=ERC20_ABI
-                )
+                # Estimate gas for approval
+                try:
+                    gas_estimate = self._web3.eth.estimate_gas(approve_tx)
+                    approve_tx['gas'] = int(gas_estimate * 1.1)  # Add 10% buffer
+                except Exception as e:
+                    logger.warning(f"Approval gas estimation failed: {e}, using default")
+                    approve_tx['gas'] = 100000  # Default gas for approvals
                 
-                # Check current allowance
-                current_allowance = token_contract.functions.allowance(
-                    account.address,
-                    spender_address
-                ).call()
+                # Sign and send approval transaction
+                signed_approve = account.sign_transaction(approve_tx)
+                tx_hash = self._web3.eth.send_raw_transaction(signed_approve.rawTransaction)
                 
-                if current_allowance < amount:
-                    # Prepare approval transaction
-                    approve_tx = token_contract.functions.approve(
-                        spender_address,
-                        amount
-                    ).build_transaction({
-                        'from': account.address,
-                        'nonce': self._web3.eth.get_transaction_count(account.address),
-                        'gasPrice': self._web3.eth.gas_price,
-                        'chainId': self.chain_id
-                    })
-                    
-                    # Estimate gas for approval
-                    try:
-                        gas_estimate = self._web3.eth.estimate_gas(approve_tx)
-                        approve_tx['gas'] = int(gas_estimate * 1.1)  # Add 10% buffer
-                    except Exception as e:
-                        logger.warning(f"Approval gas estimation failed: {e}, using default")
-                        approve_tx['gas'] = 100000  # Default gas for approvals
-                    
-                    # Sign and send approval transaction
-                    signed_approve = account.sign_transaction(approve_tx)
-                    tx_hash = self._web3.eth.send_raw_transaction(signed_approve.rawTransaction)
-                    
-                    # Wait for approval to be mined
-                    receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash)
-                    if receipt['status'] != 1:
-                        raise ValueError("Token approval failed")
-                    
-                    return tx_hash.hex()
-                    
-                return None
+                # Wait for approval to be mined
+                receipt = self._web3.eth.wait_for_transaction_receipt(tx_hash)
+                if receipt['status'] != 1:
+                    raise ValueError("Token approval failed")
+                
+                return tx_hash.hex()
+                
+            return None
 
-            except Exception as e:
-                logger.error(f"Token approval failed: {str(e)}")
-                raise
+        except Exception as e:
+            logger.error(f"Token approval failed: {str(e)}")
+            raise
 
     def swap(
         self,

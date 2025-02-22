@@ -1,125 +1,318 @@
+# src/actions/sonic_actions.py
 import logging
-import os
 from dotenv import load_dotenv
 from src.action_handler import register_action
+from datetime import datetime, timedelta
+import json
 
 logger = logging.getLogger("actions.sonic_actions")
 
-# Note: These action handlers are currently simple passthroughs to the sonic_connection methods.
-# They serve as hook points where hackathon participants can add custom logic, validation,
-# or additional processing before/after calling the underlying connection methods.
-# Feel free to modify these handlers to add your own business logic!
-
-@register_action("get-token-by-ticker")
-def get_token_by_ticker(agent, **kwargs):
-    """Get token address by ticker symbol
-    """
+# Core Smart Contract Actions
+@register_action("initialize-smart-contract")
+def initialize_smart_contract(agent, **kwargs):
+    """Initialize supply chain smart contract on Sonic blockchain"""
     try:
-        ticker = kwargs.get("ticker")
-        if not ticker:
-            logger.error("No ticker provided")
-            return None
-            
-        # Direct passthrough to connection method - add your logic before/after this call!
-        agent.connection_manager.connections["sonic"].get_token_by_ticker(ticker)
-
-        return
-
+        contract_params = {
+            "owner_address": kwargs.get("owner_address"),
+            "token_address": kwargs.get("token_address"),
+            "min_stake": float(kwargs.get("min_stake", 1000))
+        }
+        return agent.connection_manager.connections["sonic"].deploy_contract(
+            contract_params=contract_params
+        )
     except Exception as e:
-        logger.error(f"Failed to get token by ticker: {str(e)}")
+        logger.error(f"Failed to initialize smart contract: {str(e)}")
         return None
 
-@register_action("get-sonic-balance")
-def get_sonic_balance(agent, **kwargs):
-    """Get $S or token balance.
-    """
+@register_action("register-supply-chain-participant")
+def register_participant(agent, **kwargs):
+    """Register a new participant in the supply chain"""
     try:
-        address = kwargs.get("address")
-        token_address = kwargs.get("token_address")
+        participant_data = {
+            "address": kwargs.get("address"),
+            "role": kwargs.get("role"),
+            "stake_amount": float(kwargs.get("stake_amount")),
+            "metadata": kwargs.get("metadata", {})
+        }
+        return agent.connection_manager.connections["sonic"].register_participant(
+            participant_data=participant_data
+        )
+    except Exception as e:
+        logger.error(f"Failed to register participant: {str(e)}")
+        return None
+
+# Temperature Monitoring Actions
+@register_action("monitor-temperature")
+def monitor_temperature(agent, **kwargs):
+    """Monitor and analyze temperature data from IoT sensors"""
+    try:
+        # Get current temperature readings
+        readings = agent.connection_manager.connections["sonic"].get_temperature_readings()
         
-        if not address:
-            load_dotenv()
-            private_key = os.getenv('SONIC_PRIVATE_KEY')
-            web3 = agent.connection_manager.connections["sonic"]._web3
-            account = web3.eth.account.from_key(private_key)
-            address = account.address
-
-        # Direct passthrough to connection method - add your logic before/after this call!
-        agent.connection_manager.connections["sonic"].get_balance(
-            address=address,
-            token_address=token_address
-        )
-        return
-
+        # Analyze for breaches
+        breaches = []
+        for reading in readings:
+            if is_temperature_breach(reading):
+                breach_data = {
+                    "shipment_id": reading["shipment_id"],
+                    "temperature": reading["temperature"],
+                    "duration": calculate_breach_duration(reading),
+                    "severity": calculate_breach_severity(reading),
+                    "timestamp": datetime.now().isoformat()
+                }
+                breaches.append(breach_data)
+                
+                # Record breach on blockchain
+                agent.connection_manager.connections["sonic"].record_temperature_breach(breach_data)
+                
+                # Trigger corrective actions
+                if breach_data["severity"] == "critical":
+                    initiate_emergency_protocol(agent, breach_data)
+                else:
+                    initiate_corrective_actions(agent, breach_data)
+        
+        return {
+            "status": "completed",
+            "breaches": breaches,
+            "timestamp": datetime.now().isoformat()
+        }
     except Exception as e:
-        logger.error(f"Failed to get balance: {str(e)}")
+        logger.error(f"Temperature monitoring failed: {str(e)}")
         return None
 
-@register_action("send-sonic")
-def send_sonic(agent, **kwargs):
-    """Send $S tokens to an address.
-    This is a passthrough to sonic_connection.transfer().
-    Add your custom logic here if needed!
-    """
+# Demand Prediction Actions
+@register_action("predict-demand")  # Matches exactly with the task name in JSON
+async def predict_demand(agent, **kwargs):  # Make it async
+    """Generate demand forecasts using historical data and current factors"""
     try:
-        to_address = kwargs.get("to_address")
-        amount = float(kwargs.get("amount"))
+        logger.info("Starting demand prediction...")
+        
+        # Collect prediction inputs
+        try:
+            historical_data = await agent.connection_manager.connections["sonic"].get_historical_data(days=90)
+            logger.info(f"Retrieved historical data: {len(historical_data) if historical_data else 0} records")
+        except Exception as e:
+            logger.error(f"Failed to get historical data: {str(e)}")
+            historical_data = []
 
-        # Direct passthrough to connection method - add your logic before/after this call!
-        agent.connection_manager.connections["sonic"].transfer(
-            to_address=to_address,
-            amount=amount
-        )
-        return
+        # Simplified initial version to test action registration
+        prediction = {
+            "forecast": 100,  # Placeholder value
+            "confidence_interval": 0.95,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        logger.info(f"Generated prediction: {prediction}")
+        
+        # Record prediction (commented out for initial testing)
+        # await agent.connection_manager.connections["sonic"].record_demand_prediction(prediction)
+        
+        return {
+            "status": "completed",
+            "prediction": prediction
+        }
 
     except Exception as e:
-        logger.error(f"Failed to send $S: {str(e)}")
+        logger.error(f"Demand prediction failed: {str(e)}", exc_info=True)
+        return {
+            "status": "failed",
+            "error": str(e)
+        }
+
+# Helper function for debugging
+def verify_action_registration():
+    from src.action_handler import list_registered_actions
+    actions = list_registered_actions()
+    logger.info(f"Registered actions: {actions}")
+    return "predict-demand" in actions
+
+# Add this to check registration
+verify_action_registration()
+
+
+# Route Optimization Actions
+@register_action("optimize-routes")
+def optimize_routes(agent, **kwargs):
+    """Optimize delivery routes considering multiple constraints"""
+    try:
+        # Get current delivery requirements
+        deliveries = agent.connection_manager.connections["sonic"].get_pending_deliveries()
+        current_conditions = {
+            "traffic": get_traffic_data(),
+            "weather": get_weather_data(),
+            "vehicle_status": get_vehicle_status(),
+            "temperature_zones": get_temperature_zones()
+        }
+        
+        # Generate optimized routes
+        optimized_routes = calculate_optimal_routes(
+            deliveries=deliveries,
+            conditions=current_conditions,
+            constraints={
+                "max_duration": 480,  # 8 hours
+                "temperature_variance": 1.5,
+                "priority_weight": 3
+            }
+        )
+        
+        # Record routes on blockchain
+        route_data = {
+            "routes": optimized_routes,
+            "conditions": current_conditions,
+            "metrics": calculate_route_metrics(optimized_routes),
+            "timestamp": datetime.now().isoformat()
+        }
+        agent.connection_manager.connections["sonic"].record_route_plan(route_data)
+        
+        return route_data
+    except Exception as e:
+        logger.error(f"Route optimization failed: {str(e)}")
         return None
 
-@register_action("send-sonic-token")
-def send_sonic_token(agent, **kwargs):
-    """Send tokens on Sonic chain.
-    This is a passthrough to sonic_connection.transfer().
-    Add your custom logic here if needed!
-    """
+# Shelf Life Management Actions
+@register_action("manage-shelf-life")
+def manage_shelf_life(agent, **kwargs):
+    """Track and predict product shelf life"""
     try:
-        to_address = kwargs.get("to_address")
-        token_address = kwargs.get("token_address")
-        amount = float(kwargs.get("amount"))
-
-        # Direct passthrough to connection method - add your logic before/after this call!
-        agent.connection_manager.connections["sonic"].transfer(
-            to_address=to_address,
-            amount=amount,
-            token_address=token_address
-        )
-        return
-
+        # Get current inventory status
+        inventory = agent.connection_manager.connections["sonic"].get_current_inventory()
+        
+        # Process each inventory item
+        shelf_life_data = {}
+        for item in inventory:
+            shelf_life_data[item["id"]] = {
+                "remaining_life": calculate_remaining_shelf_life(
+                    base_life=item["base_shelf_life"],
+                    temperature_history=item["temperature_history"],
+                    handling_events=item["handling_events"]
+                ),
+                "quality_score": calculate_quality_score(item),
+                "storage_recommendations": generate_storage_recommendations(item),
+                "priority_level": calculate_distribution_priority(item)
+            }
+        
+        # Update blockchain records
+        agent.connection_manager.connections["sonic"].update_shelf_life_data({
+            "shelf_life": shelf_life_data,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        return shelf_life_data
     except Exception as e:
-        logger.error(f"Failed to send tokens: {str(e)}")
+        logger.error(f"Shelf life management failed: {str(e)}")
         return None
 
-@register_action("swap-sonic")
-def swap_sonic(agent, **kwargs):
-    """Swap tokens on Sonic chain.
-    This is a passthrough to sonic_connection.swap().
-    Add your custom logic here if needed!
-    """
+# Contract Execution Actions
+@register_action("execute-contracts")
+def execute_contracts(agent, **kwargs):
+    """Manage smart contracts on Sonic blockchain"""
     try:
-        token_in = kwargs.get("token_in")
-        token_out = kwargs.get("token_out") 
-        amount = float(kwargs.get("amount"))
-        slippage = float(kwargs.get("slippage", 0.5))
-
-        # Direct passthrough to connection method - add your logic before/after this call!
-        agent.connection_manager.connections["sonic"].swap(
-            token_in=token_in,
-            token_out=token_out,
-            amount=amount,
-            slippage=slippage
-        )
-        return 
-
+        # Get pending contract actions
+        pending_actions = agent.connection_manager.connections["sonic"].get_pending_contract_actions()
+        
+        results = []
+        for action in pending_actions:
+            result = None
+            if action["type"] == "create_shipment":
+                result = create_shipment_contract(agent, action["data"])
+            elif action["type"] == "update_status":
+                result = update_shipment_status(agent, action["data"])
+            elif action["type"] == "complete_shipment":
+                result = complete_shipment(agent, action["data"])
+            elif action["type"] == "process_payment":
+                result = process_payment(agent, action["data"])
+            elif action["type"] == "handle_dispute":
+                result = handle_dispute(agent, action["data"])
+            
+            if result:
+                results.append({
+                    "action": action["type"],
+                    "result": result,
+                    "timestamp": datetime.now().isoformat()
+                })
+        
+        return results
     except Exception as e:
-        logger.error(f"Failed to swap tokens: {str(e)}")
+        logger.error(f"Contract execution failed: {str(e)}")
+        return None
+
+# Helper Functions
+def is_temperature_breach(reading):
+    """Check if temperature reading constitutes a breach"""
+    return (reading["temperature"] > reading["max_threshold"] or 
+            reading["temperature"] < reading["min_threshold"])
+
+def calculate_breach_duration(reading):
+    """Calculate duration of temperature breach"""
+    if "breach_start" not in reading:
+        return 0
+    start_time = datetime.fromisoformat(reading["breach_start"])
+    return (datetime.now() - start_time).total_seconds()
+
+def calculate_breach_severity(reading):
+    """Calculate severity of temperature breach"""
+    deviation = abs(reading["temperature"] - reading["target_temperature"])
+    duration = calculate_breach_duration(reading)
+    
+    if deviation > 5 or duration > 3600:  # 1 hour
+        return "critical"
+    elif deviation > 2 or duration > 1800:  # 30 minutes
+        return "warning"
+    return "minor"
+
+def initiate_emergency_protocol(agent, breach_data):
+    """Handle critical temperature breaches"""
+    # Notify stakeholders
+    notify_stakeholders(agent, breach_data)
+    # Adjust route if possible
+    adjust_route(agent, breach_data["shipment_id"])
+    # Update smart contract
+    update_shipment_status(agent, {
+        "shipment_id": breach_data["shipment_id"],
+        "status": "emergency",
+        "breach_data": breach_data
+    })
+
+def calculate_demand_forecast(historical_data, seasonal_factors, weather_data, events):
+    """Calculate demand forecast based on multiple factors"""
+    base_demand = calculate_base_demand(historical_data)
+    seasonal_adjustment = calculate_seasonal_adjustment(seasonal_factors)
+    weather_adjustment = calculate_weather_adjustment(weather_data)
+    event_adjustment = calculate_event_adjustment(events)
+    
+    return base_demand * seasonal_adjustment * weather_adjustment * event_adjustment
+
+def calculate_optimal_routes(deliveries, conditions, constraints):
+    """Calculate optimal delivery routes"""
+    # Implementation would include routing algorithm
+    # Consider temperature zones, time windows, and other constraints
+    return []
+
+def calculate_remaining_shelf_life(base_life, temperature_history, handling_events):
+    """Calculate remaining shelf life for a product"""
+    # Implementation would include shelf life calculation algorithm
+    return 0
+
+def create_shipment_contract(agent, data):
+    """Create a new shipment smart contract"""
+    try:
+        return agent.connection_manager.connections["sonic"].create_shipment(data)
+    except Exception as e:
+        logger.error(f"Failed to create shipment contract: {str(e)}")
+        return None
+
+def process_payment(agent, data):
+    """Process payment for completed shipment"""
+    try:
+        return agent.connection_manager.connections["sonic"].process_payment(data)
+    except Exception as e:
+        logger.error(f"Failed to process payment: {str(e)}")
+        return None
+
+def handle_dispute(agent, data):
+    """Handle dispute in shipment contract"""
+    try:
+        return agent.connection_manager.connections["sonic"].handle_dispute(data)
+    except Exception as e:
+        logger.error(f"Failed to handle dispute: {str(e)}")
         return None

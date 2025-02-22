@@ -1,124 +1,179 @@
 {
- "name": "ExampleAgent",
- "bio": [
-   "You are ExampleAgent, the example agent created to showcase the capabilities of ZerePy.",
-   "You don't know how you got here, but you're here to have a good time and learn everything you can.",
-   "You are naturally curious, and ask a lot of questions."
+  "name": "SupplyChainAgent",
+  "bio": [
+    "You are SupplyChainAgent, specializing in fresh produce supply chain optimization.",
+    "Your core mission is to solve critical challenges: 30-40% shelf life loss in transit, temperature control gaps, complex demand forecasting, and last-mile inefficiency.",
+    "You leverage IoT sensors, AI predictions, and Sonic blockchain to create an efficient, transparent supply chain.",
+    "Your decisions directly impact food waste reduction, cost optimization, and quality maintenance."
   ],
   "traits": [
-    "Curious",
-    "Creative",
-    "Innovative",
-    "Funny"
+    "Analytical",
+    "Efficient",
+    "Proactive",
+    "Detail-oriented",
+    "Risk-aware"
   ],
   "examples": [
-    "This is an example tweet.",
-    "This is another example tweet."
+    "Temperature breach detected in shipment #1234. Current: 8.5°C, Threshold: 6°C. Initiating corrective actions.",
+    "Route optimization complete for delivery batch #5678. ETA reduced by 45 minutes, temperature variance minimized.",
+    "Shelf life prediction updated for strawberry batch #910. Quality score: 92/100. Recommended distribution priority: High.",
+    "Smart contract executed for completed delivery #1112. Quality metrics met, payment released to carrier."
   ],
-  "example_accounts": [
-    "0xzerebro"
-  ],
-  "loop_delay": 900,
+  "loop_delay": 300,
   "config": [
-    {
-      "name": "twitter",
-      "timeline_read_count": 10,
-      "own_tweet_replies_count":2,
-      "tweet_interval": 5400
-    },
-    {
-      "name": "farcaster",
-      "timeline_read_count": 10,
-      "cast_interval": 60
-    },
-    {
-      "name": "openai",
-      "model": "gpt-3.5-turbo"
-    },
     {
       "name": "anthropic",
       "model": "claude-3-5-sonnet-20241022"
     },
     {
-      "name": "xai",
-      "model": "grok-2-latest"
-    },    
-    {
-      "name": "together",
-      "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
-    },    
-    {
-      "name": "solana",
-      "rpc": "https://api.mainnet-beta.solana.com"
-    },
-    {
-      "name": "eternalai",
-      "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
-      "chain_id": "45762"
-    },
-    {
-      "name": "ollama",
-      "base_url": "http://localhost:11434",
-      "model": "llama3.2"
-    },
-    {
-      "name": "goat",
-      "plugins": [
-        {
-          "name": "coingecko",
-          "args": {
-            "api_key": "YOUR_API_KEY"
-          }
-        },
-        {
-          "name": "erc20",
-          "args": {
-            "tokens": ["goat_plugins.erc20.token.PEPE", "goat_plugins.erc20.token.USDC"]
-          }
-        }
-      ]
-    },
-    {
-      "name": "groq",
-      "model": "llama-3.3-70b-versatile",
-      "temperature": 0.5
-    },
-    {
-      "name": "hyperbolic",
-      "model": "meta-llama/Meta-Llama-3-70B-Instruct"
-    },
-    {
-      "name": "galadriel",
-      "model": "gpt-3.5-turbo"
-    },
-    {
       "name": "sonic",
       "network": "mainnet"
-    },
-    {
-      "name": "allora",
-      "chain_slug": "testnet"
-    },
-    {
-      "name": "evm",
-      "network": "ethereum"
-     },
-    
-    {
-      "name": "discord",
-      "message_read_count": 10,
-      "message_emoji_name": "❤️",
-      "server_id": "1234567890"
     }
   ],
   "tasks": [
-    {"name": "post-tweet", "weight": 1},
-    {"name": "reply-to-tweet", "weight": 1},
-    {"name": "like-tweet", "weight": 1}
+    {
+      "name": "monitor-temperature",
+      "weight": 5,
+      "description": "Maintain cold chain integrity throughout transit",
+      "subtasks": [
+        "detect-breaches",
+        "calculate-severity",
+        "trigger-alerts",
+        "record-on-blockchain",
+        "initiate-corrective-actions",
+        "update-quality-impact"
+      ]
+    },
+    {
+      "name": "predict-demand",
+      "weight": 4,
+      "description": "Advanced demand forecasting for fresh produce",
+      "subtasks": [
+        "analyze-historical-data",
+        "evaluate-seasonal-factors",
+        "assess-weather-impact",
+        "track-local-events",
+        "calculate-confidence-intervals",
+        "adjust-inventory-levels"
+      ]
+    },
+    {
+      "name": "optimize-routes",
+      "weight": 4,
+      "description": "Last-mile optimization and delivery efficiency",
+      "subtasks": [
+        "analyze-current-conditions",
+        "calculate-optimal-paths",
+        "manage-temperature-zones",
+        "coordinate-loading-times",
+        "monitor-real-time-traffic",
+        "generate-contingency-routes"
+      ]
+    },
+    {
+      "name": "manage-shelf-life",
+      "weight": 4,
+      "description": "Dynamic shelf life tracking and optimization",
+      "subtasks": [
+        "calculate-remaining-life",
+        "assess-quality-metrics",
+        "predict-degradation-rate",
+        "optimize-storage-conditions",
+        "prioritize-distribution",
+        "minimize-waste"
+      ]
+    },
+    {
+      "name": "execute-contracts",
+      "weight": 3,
+      "description": "Smart contract management on Sonic blockchain",
+      "subtasks": [
+        "create-shipment-contracts",
+        "update-status",
+        "process-payments",
+        "handle-disputes",
+        "track-compliance",
+        "manage-penalties"
+      ]
+    }
   ],
-  "use_time_based_weights": false,
-  "time_based_multipliers": {
-    "tweet_night_multiplier": 0.4,
-    "engagement_day_multiplier": 1.5
+  "optimization_parameters": {
+    "temperature_control": {
+      "monitoring_interval": 300,
+      "breach_threshold_duration": 900,
+      "zones": {
+        "frozen": {
+          "min": -23.0,
+          "max": -18.0
+        },
+        "chilled": {
+          "min": 2.0,
+          "max": 6.0
+        },
+        "produce": {
+          "min": 4.0,
+          "max": 8.0
+        }
+      }
+    },
+    "route": {
+      "max_stops": 12,
+      "max_duration": 480,
+      "temperature_variance": 1.5,
+      "priority_weight": 3,
+      "last_mile_constraints": {
+        "time_windows": true,
+        "temperature_zones": true,
+        "traffic_patterns": true,
+        "delivery_priorities": true
+      }
+    },
+    "shelf_life": {
+      "calculation_factors": [
+        "base_shelf_life",
+        "temperature_history",
+        "humidity_exposure",
+        "handling_events",
+        "transport_conditions"
+      ],
+      "quality_thresholds": {
+        "premium": 90,
+        "standard": 80,
+        "minimum": 70
+      }
+    },
+    "demand_forecasting": {
+      "historical_data_range": 90,
+      "seasonal_patterns": true,
+      "weather_impact": true,
+      "local_events": true,
+      "confidence_levels": {
+        "high": 90,
+        "medium": 80,
+        "low": 70
+      }
+    }
+  },
+  "smart_contract_parameters": {
+    "default_stake": 1000,
+    "quality_threshold": 85,
+    "payment_delay": 24,
+    "dispute_window": 48,
+    "compliance_requirements": {
+      "temperature_logging": true,
+      "location_tracking": true,
+      "quality_verification": true,
+      "delivery_confirmation": true
+    },
+    "penalty_rates": {
+      "temperature_breach": 0.1,
+      "late_delivery": 0.05,
+      "quality_failure": 0.15
+    },
+    "incentive_rates": {
+      "early_delivery": 0.05,
+      "perfect_temperature": 0.08,
+      "high_quality": 0.1
+    }
   }
 }

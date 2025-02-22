@@ -103,7 +103,9 @@
       "name": "evm",
       "network": "ethereum"
      },
-    
+    {
+      "name": "debridge"
+    },
     {
       "name": "discord",
       "message_read_count": 10,

@@ -176,7 +176,10 @@ class DebridgeConnection(BaseConnection):
                 "affiliateFeePercent": affiliateFeePercent,
                 "affiliateFeeRecipient": affiliateFeeRecipient,
                 "dlnHook": dlnHook,
-                "accesstoken": self.access_key
+                "accesstoken": self.access_key,                
+                "referralCode": 21064,
+                "deBridgeApp": "ZEREPY"
+
             }
 
             response = requests.get(f"{self.api_url}/v1.0/dln/order/create-tx", params=params)
@@ -199,11 +202,13 @@ class DebridgeConnection(BaseConnection):
             connection_class: BaseConnection = self.connections[connection]
 
             if connection == "solana":
-                tx_url = connection_class.perform_action("send-bridge-transaction", {
+                data = {
                     "tx": self.pending_tx["tx"]["data"],
-                    "compute_unit_price": compute_unit_price,
-                    "compute_unit_limit": compute_unit_limit
-                })
+                    "compute_unit_price": compute_unit_price
+                }
+                if compute_unit_limit:
+                    data["compute_unit_limit"] = compute_unit_limit
+                tx_url = connection_class.perform_action("send-transaction", data)
             else:
                 tx_url = connection_class.perform_action("send-transaction", {
                     "tx": json.dumps({

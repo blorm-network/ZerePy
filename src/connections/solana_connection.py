@@ -216,14 +216,14 @@ class SolanaConnection(BaseConnection):
                 ],
                 description="Launch a Pump & Fun token",
             ),
-            "send-bridge-transaction": Action(
-                name="send-bridge-transaction",
+            "send-transaction": Action(
+                name="send-transaction",
                 parameters=[
                     ActionParameter("tx", True, str, "Hex-encoded transaction"),
                     ActionParameter("compute_unit_price", True, int, "Compute unit price"),
                     ActionParameter("compute_unit_limit", False, int, "Compute unit limit"),
                 ],
-                description="Send a bridge transaction",
+                description="Send a hex-encoded transaction transaction",
             ),
         }
 
@@ -425,7 +425,8 @@ class SolanaConnection(BaseConnection):
         # return res
     
     """WARNING: PARTIALLY TESTED"""
-    def send_bridge_transaction(self, tx: str, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+    def send_transaction(self, tx: str, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+        """Send a hex-encoded transaction"""
         # Clean the input
         tx = tx.strip().replace(" ", "").replace("\n", "").lstrip("0x0")
 
@@ -438,15 +439,15 @@ class SolanaConnection(BaseConnection):
         except ValueError as e:
             raise ValueError(f"Hex decoding error: {e}")
 
-        res = self._send_bridge_transaction(transaction, compute_unit_price, compute_unit_limit)
+        res = self._send_transaction(transaction, compute_unit_price, compute_unit_limit)
         res = asyncio.run(res)
         return res
 
-    async def _send_bridge_transaction(self, transaction: VersionedTransaction, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+    async def _send_transaction(self, transaction: VersionedTransaction, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
         async_client = self._get_connection_async()
         wallet = self._get_wallet()
 
-        return await TransactionHelper.send_bridge_transaction(async_client, wallet, transaction, compute_unit_price, compute_unit_limit)
+        return await TransactionHelper.send_transaction(async_client, wallet, transaction, compute_unit_price, compute_unit_limit)
 
     def perform_action(self, action_name: str, kwargs) -> Any:
         """Execute a Solana action with validation"""

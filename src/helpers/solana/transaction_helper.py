@@ -55,7 +55,7 @@ class TransactionHelper:
             )
 
     @staticmethod
-    async def send_bridge_transaction(async_client: AsyncClient, wallet: Keypair, transaction: VersionedTransaction, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+    async def send_transaction(async_client: AsyncClient, wallet: Keypair, transaction: VersionedTransaction, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
         try:
             # Update priority fee
             TransactionHelper.update_priority_fee(transaction, compute_unit_price, compute_unit_limit)

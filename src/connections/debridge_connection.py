@@ -66,6 +66,8 @@ class DebridgeConnection(BaseConnection):
                                 description='Affiliate fee recipient address'),
                 ActionParameter(name='prependOperatingExpense', type=bool,
                                 required=False, description='Prepend operating expense'),
+                ActionParameter(name='dlnHook', type=str, required=False,
+                                description='DLN hook'),
                 ActionParameter(name='affiliateFeePercent', type=float,
                                 required=False, description='Affiliate fee percentage')
             ]
@@ -155,7 +157,8 @@ class DebridgeConnection(BaseConnection):
             prependOperatingExpense: bool = True,
             srcChainTokenInAmount: str = "auto",
             dstChainTokenOutAmount: str = "auto", 
-            affiliateFeePercent: float = 0
+            affiliateFeePercent: float = 0,
+            dlnHook: str = None
         ) -> Dict:
         """Create Bridge TX using Debridge"""
         try:
@@ -172,6 +175,7 @@ class DebridgeConnection(BaseConnection):
                 "dstChainOrderAuthorityAddress": dstChainOrderAuthorityAddress,
                 "affiliateFeePercent": affiliateFeePercent,
                 "affiliateFeeRecipient": affiliateFeeRecipient,
+                "dlnHook": dlnHook,
                 "accesstoken": self.access_key
             }
 

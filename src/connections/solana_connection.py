@@ -1,7 +1,7 @@
 import logging
 import os
-import requests
 import asyncio
+
 from typing import Dict, Any, Optional
 
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
@@ -16,6 +16,7 @@ from src.helpers.solana.token_deploy import TokenDeploymentManager
 from src.helpers.solana.performance import SolanaPerformanceTracker
 from src.helpers.solana.transfer import SolanaTransferHelper
 from src.helpers.solana.read import SolanaReadHelper
+from src.helpers.solana.transaction_helper import TransactionHelper
 
 
 from dotenv import load_dotenv, set_key
@@ -23,10 +24,9 @@ from dotenv import load_dotenv, set_key
 from jupiter_python_sdk.jupiter import Jupiter
 
 from solana.rpc.async_api import AsyncClient
-from solana.rpc.commitment import Confirmed
 
-from solders.keypair import Keypair  # type: ignore
-
+from solders.keypair import Keypair
+from solders.transaction import VersionedTransaction
 
 logger = logging.getLogger("connections.solana_connection")
 
@@ -215,6 +215,15 @@ class SolanaConnection(BaseConnection):
                     ActionParameter("options", False, dict, "Additional token options"),
                 ],
                 description="Launch a Pump & Fun token",
+            ),
+            "send-bridge-transaction": Action(
+                name="send-bridge-transaction",
+                parameters=[
+                    ActionParameter("tx", True, str, "Hex-encoded transaction"),
+                    ActionParameter("compute_unit_price", True, int, "Compute unit price"),
+                    ActionParameter("compute_unit_limit", False, int, "Compute unit limit"),
+                ],
+                description="Send a bridge transaction",
             ),
         }
 
@@ -414,6 +423,30 @@ class SolanaConnection(BaseConnection):
         #    f"Launched Pump & Fun token {token_ticker}\nToken Mint: {res['mint']}"
         # )
         # return res
+    
+    """WARNING: PARTIALLY TESTED"""
+    def send_bridge_transaction(self, tx: str, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+        # Clean the input
+        tx = tx.strip().replace(" ", "").replace("\n", "").lstrip("0x0")
+
+        # Ensure hex string has even length
+        if len(tx) % 2 != 0:
+            tx = "0" + tx 
+        try:
+            tx_bytes = bytes.fromhex(tx)  # Convert to bytes
+            transaction = VersionedTransaction.from_bytes(tx_bytes)
+        except ValueError as e:
+            raise ValueError(f"Hex decoding error: {e}")
+
+        res = self._send_bridge_transaction(transaction, compute_unit_price, compute_unit_limit)
+        res = asyncio.run(res)
+        return res
+
+    async def _send_bridge_transaction(self, transaction: VersionedTransaction, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+        async_client = self._get_connection_async()
+        wallet = self._get_wallet()
+
+        return await TransactionHelper.send_bridge_transaction(async_client, wallet, transaction, compute_unit_price, compute_unit_limit)
 
     def perform_action(self, action_name: str, kwargs) -> Any:
         """Execute a Solana action with validation"""

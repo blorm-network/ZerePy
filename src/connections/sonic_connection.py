@@ -2,6 +2,7 @@ import logging
 import os
 import requests
 import time
+import json
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv, set_key
 from web3 import Web3
@@ -12,6 +13,7 @@ from src.constants.networks import SONIC_NETWORKS
 
 logger = logging.getLogger("connections.sonic_connection")
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 class SonicConnectionError(Exception):
     """Base exception for Sonic connection errors"""
@@ -141,6 +143,13 @@ class SonicConnection(BaseConnection):
                     ActionParameter("slippage", False, float, "Max slippage percentage")
                 ],
                 description="Swap tokens"
+            ),
+            "send-transaction": Action(
+                name="send-transaction",
+                parameters=[
+                    ActionParameter("tx", True, str, "Raw transaction data")
+                ],
+                description="Send a raw transaction"
             )
         }
 
@@ -438,6 +447,40 @@ class SonicConnection(BaseConnection):
         except Exception as e:
             logger.error(f"Swap failed: {e}")
             raise
+    def send_transaction(self, tx: str) -> str:
+        """Send a raw transaction to the network"""
+        try:
+            private_key = os.getenv('SONIC_PRIVATE_KEY')
+            account = self._web3.eth.account.from_key(private_key)
+            
+            data = json.loads(tx)
+            tx = data["tx"]
+            tx["from"] = account.address
+            tx["nonce"] = self._web3.eth.get_transaction_count(account.address)
+            tx["gasPrice"] = self._web3.eth.gas_price
+            tx["chainId"] = self._web3.eth.chain_id
+            
+            if data["estimation"]["srcChainTokenIn"]["address"] != ZERO_ADDRESS:
+                self._handle_token_approval(
+                    data["estimation"]["srcChainTokenIn"]["address"],
+                    tx["to"],
+                    int(data["estimation"]["srcChainTokenIn"]["amount"])
+                )
+            
+            if "value" in tx:
+                tx["value"] = int(tx["value"])
+            try:
+                tx['gas'] = self._web3.eth.estimate_gas(tx)
+            except Exception as e:
+                raise ValueError(f"Gas estimation failed: {e}")
+            signed_tx = account.sign_transaction(tx)
+            tx_hash = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_link = self._get_explorer_link(tx_hash.hex())
+            return tx_link
+        except Exception as e:
+            logger.error(f"Failed to send transaction: {e}")
+            raise
+    
     def perform_action(self, action_name: str, kwargs) -> Any:
         """Execute a Sonic action with validation"""
         if action_name not in self.actions:

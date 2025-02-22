@@ -90,7 +90,10 @@ class ConnectionManager:
         try:
             name = config_dic["name"]
             connection_class = self._class_name_to_type(name)
-            connection = connection_class(config_dic)
+            if name == "debridge":
+                connection = DebridgeConnection(config_dic, self.connections)
+            else: 
+                connection = connection_class(config_dic)
             self.connections[name] = connection
         except Exception as e:
             logging.error(f"Failed to initialize connection {name}: {e}")

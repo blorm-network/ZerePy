@@ -2,6 +2,7 @@ import logging
 import requests
 from typing import Dict, Any
 import os
+import json
 from dotenv import load_dotenv
 from .base_connection import BaseConnection, Action, ActionParameter
 
@@ -15,10 +16,12 @@ class DebridgeConnectionError(Exception):
 
 class DebridgeConnection(BaseConnection):
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], connections: Dict[str, Any]):
         super().__init__(config)
         self.api_url = "https://dln.debridge.finance"
         self._initialize()
+        self.pending_tx = None
+        self.connections = connections
 
     def _initialize(self):
         """Initialize Debridge connection"""
@@ -65,6 +68,15 @@ class DebridgeConnection(BaseConnection):
                                 required=False, description='Prepend operating expense'),
                 ActionParameter(name='affiliateFeePercent', type=float,
                                 required=False, description='Affiliate fee percentage')
+            ]
+        )
+        self.actions['execute-bridge-tx'] = Action(
+            name='execute-bridge-tx',
+            description='Execute bridge transaction using Debridge',
+            parameters=[
+                ActionParameter(name='connection', type=str, required=True, description='Connection name'),
+                ActionParameter(name='compute_unit_price', type=int, required=False, description='Compute unit price'),
+                ActionParameter(name='compute_unit_limit', type=int, required=False, description='Compute unit limit')
             ]
         )
         self.actions['get-order-status'] = Action(
@@ -121,7 +133,9 @@ class DebridgeConnection(BaseConnection):
     def is_configured(self, verbose: bool = False) -> bool:
         """Check if the connection is properly configured"""
         try:
-            # TODO: Add any additional checks if needed
+            if not self.connections:
+                logger.error("No connections found")
+                return False
             return True
         except Exception as e:
             if verbose:
@@ -137,7 +151,7 @@ class DebridgeConnection(BaseConnection):
             dstChainTokenOutRecipient: str, 
             srcChainOrderAuthorityAddress: str, 
             dstChainOrderAuthorityAddress: str, 
-            affiliateFeeRecipient: str,
+            affiliateFeeRecipient: str = None,
             prependOperatingExpense: bool = True,
             srcChainTokenInAmount: str = "auto",
             dstChainTokenOutAmount: str = "auto", 
@@ -163,10 +177,42 @@ class DebridgeConnection(BaseConnection):
 
             response = requests.get(f"{self.api_url}/v1.0/dln/order/create-tx", params=params)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            self.pending_tx = data
+            logger.info(json.dumps(data["estimation"], indent=4))
 
         except Exception as e:
             raise DebridgeConnectionError(f"Failed to bridge assets: {str(e)}")
+        
+    def execute_bridge_tx(self, connection: str, compute_unit_price: int = 200_000, compute_unit_limit: int = None) -> None:
+        """Execute bridge transaction using Debridge"""
+        try:
+            logger.info("Executing bridge transaction...")
+            
+            if not self.pending_tx:
+                raise ValueError("No pending transaction found")
+            
+            connection_class: BaseConnection = self.connections[connection]
+
+            if connection == "solana":
+                tx_url = connection_class.perform_action("send-bridge-transaction", {
+                    "tx": self.pending_tx["tx"]["data"],
+                    "compute_unit_price": compute_unit_price,
+                    "compute_unit_limit": compute_unit_limit
+                })
+            else:
+                tx_url = connection_class.perform_action("send-transaction", {
+                    "tx": json.dumps({
+                        "tx": self.pending_tx["tx"], 
+                        "estimation": self.pending_tx["estimation"]
+                    })
+                })
+
+            self.pending_tx = None
+            return tx_url
+
+        except Exception as e:
+            raise DebridgeConnectionError(f"Failed to execute bridge transaction: {str(e)}")
 
     def get_order_status(self, id: str = None, hash: str = None) -> Dict:
         """Get order status using Debridge"""

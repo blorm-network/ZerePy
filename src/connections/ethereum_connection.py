@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import requests
+import json
 from typing import Dict, Any, Optional, Union
 from dotenv import load_dotenv, set_key
 from web3 import Web3
@@ -11,6 +12,8 @@ from src.constants.abi import ERC20_ABI
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
 
 logger = logging.getLogger("connections.ethereum_connection")
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 class EthereumConnectionError(Exception):
     """Base exception for Ethereum connection errors"""
@@ -116,6 +119,13 @@ class EthereumConnection(BaseConnection):
                     ActionParameter("slippage", False, float, "Max slippage percentage (default 0.5%)")
                 ],
                 description="Swap tokens using Kyberswap aggregator"
+            ),
+            "send-transaction": Action(
+                name="send-transaction",
+                parameters=[
+                    ActionParameter("tx", True, str, "Raw transaction data")
+                ],
+                description="Send a raw transaction to the Ethereum network"
             )
         }
 
@@ -627,6 +637,39 @@ class EthereumConnection(BaseConnection):
                 
         except Exception as e:
             return f"Swap failed: {str(e)}"
+    
+    def send_transaction(self, tx: Dict[str, Any]) -> str:
+        """Send a raw transaction to the Ethereum network"""
+        try:
+            private_key = os.getenv('ETH_PRIVATE_KEY')
+            account = self._web3.eth.account.from_key(private_key)
+            
+            data = json.loads(tx)
+            tx = data["tx"]
+            tx["from"] = account.address
+            tx["nonce"] = self._web3.eth.get_transaction_count(account.address)
+            tx["gasPrice"] = self._web3.eth.gas_price
+            tx["chainId"] = self._web3.eth.chain_id
+            
+            if data["estimation"]["srcChainTokenIn"]["address"] != ZERO_ADDRESS:
+                self._handle_token_approval(
+                    data["estimation"]["srcChainTokenIn"]["address"],
+                    tx["to"],
+                    int(data["estimation"]["srcChainTokenIn"]["amount"])
+                )
+            
+            if "value" in tx:
+                tx["value"] = int(tx["value"])
+            try:
+                tx['gas'] = self._web3.eth.estimate_gas(tx)
+            except Exception as e:
+                raise ValueError(f"Gas estimation failed: {e}")
+            signed_tx = account.sign_transaction(tx)
+            tx_hash = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_link = self._get_explorer_link(tx_hash.hex())
+            return tx_link
+        except Exception as e:
+            return f"Transaction failed: {str(e)}"
 
     def perform_action(self, action_name: str, kwargs: Dict[str, Any]) -> Any:
         """Execute an Ethereum action with validation"""

@@ -17,7 +17,7 @@ def post_echochambers(agent, **kwargs):
         
         # Generate message based on room topic and tags
         previous_messages = agent.connection_manager.connections["echochambers"].sent_messages
-        previous_content = "\n".join([f"- {msg['content']}" for msg in previous_messages])
+        previous_content = "\n".join([f"- {msg.get('content', '')}" for msg in previous_messages])
         agent.logger.info(f"Found {len(previous_messages)} messages in post history")
         
         prompt  = POST_ECHOCHAMBER_PROMPT.format(

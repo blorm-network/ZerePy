@@ -80,9 +80,7 @@ class ConnectionManager:
         Create and register a new connection with configuration
 
         Args:
-            name: Identifier for the connection
-            connection_class: The connection class to instantiate
-            config: Configuration dictionary for the connection
+            config_dic: Configuration dictionary containing connection name and settings
         """
         try:
             name = config_dic["name"]

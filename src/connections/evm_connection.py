@@ -2,6 +2,7 @@ import logging
 import os
 import time
 import requests
+import json
 from typing import Dict, Any, Optional, Union
 from dotenv import load_dotenv, set_key
 from web3 import Web3
@@ -12,6 +13,7 @@ from src.connections.base_connection import BaseConnection, Action, ActionParame
 
 logger = logging.getLogger("connections.evm_connection")
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 class EVMConnectionError(Exception):
     """Base exception for EVM connection errors"""
@@ -56,18 +58,18 @@ class EVMConnection(BaseConnection):
                     self._web3.middleware_onion.inject(geth_poa_middleware, layer=0)
                     
                     if not self._web3.is_connected():
-                        raise EthereumConnectionError("Failed to connect to Ethereum network")
+                        raise EVMConnectionError("Failed to connect to Ethereum network")
                     
                     chain_id = self._web3.eth.chain_id
                     if chain_id != self.chain_id:
-                        raise EthereumConnectionError(f"Connected to wrong chain. Expected {self.chain_id}, got {chain_id}")
+                        raise EVMConnectionError(f"Connected to wrong chain. Expected {self.chain_id}, got {chain_id}")
                         
                     logger.info(f"Connected to {self.network} network with chain ID: {chain_id}")
                     break
                     
                 except Exception as e:
                     if attempt == 2:
-                        raise EthereumConnectionError(f"Failed to initialize Web3 after 3 attempts: {str(e)}")
+                        raise EVMConnectionError(f"Failed to initialize Web3 after 3 attempts: {str(e)}")
                     logger.warning(f"Web3 initialization attempt {attempt + 1} failed: {str(e)}")
                     time.sleep(1)
 
@@ -123,6 +125,13 @@ class EVMConnection(BaseConnection):
                     ActionParameter("slippage", False, float, "Max slippage percentage (default 0.5%)")
                 ],
                 description="Swap tokens using Kyberswap aggregator"
+            ),
+            "send-transaction": Action(
+                name="send-transaction",
+                parameters=[
+                    ActionParameter("tx", True, str, "Transaction object")
+                ],
+                description="Send a signed transaction"
             )
         }
 
@@ -490,6 +499,34 @@ class EVMConnection(BaseConnection):
                 
         except Exception as e:
             return f"Swap failed: {str(e)}"
+    
+    def send_transaction(self, tx: str) -> str:
+        """Send a signed transaction"""
+        try:
+            private_key = os.getenv('EVM_PRIVATE_KEY') or os.getenv('ETH_PRIVATE_KEY')
+            account = self._web3.eth.account.from_key(private_key)
+            
+            data = json.loads(tx)
+            tx = data["tx"]
+            tx["from"] = account.address
+            tx["nonce"] = self._web3.eth.get_transaction_count(account.address)
+            tx["gasPrice"] = self._web3.eth.gas_price
+            tx["chainId"] = self._web3.eth.chain_id
+            
+            if "value" in tx:
+                tx["value"] = int(tx["value"])
+            try:
+                tx['gas'] = self._web3.eth.estimate_gas(tx)
+            except Exception as e:
+                raise ValueError(f"Gas estimation failed: {e}")
+            signed_tx = account.sign_transaction(tx)
+            tx_hash = self._web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_link = self._get_explorer_link(tx_hash.hex())
+            return tx_link
+
+        except Exception as e:
+            logger.error(f"Failed to send transaction: {str(e)}")
+            raise
 
     def perform_action(self, action_name: str, kwargs: Dict[str, Any]) -> Any:
         """Execute an Ethereum action with validation"""
@@ -497,7 +534,7 @@ class EVMConnection(BaseConnection):
             raise KeyError(f"Unknown action: {action_name}")
         load_dotenv()
         if not self.is_configured(verbose=True):
-            raise EthereumConnectionError("Ethereum connection is not properly configured")
+            raise EVMConnectionError("Ethereum connection is not properly configured")
         action = self.actions[action_name]
         errors = action.validate_params(kwargs)
         if errors:

@@ -1,7 +1,7 @@
 import logging
 import os
-import requests
 import asyncio
+
 from typing import Dict, Any, Optional
 
 from src.connections.base_connection import BaseConnection, Action, ActionParameter
@@ -16,6 +16,7 @@ from src.helpers.solana.token_deploy import TokenDeploymentManager
 from src.helpers.solana.performance import SolanaPerformanceTracker
 from src.helpers.solana.transfer import SolanaTransferHelper
 from src.helpers.solana.read import SolanaReadHelper
+from src.helpers.solana.transaction_helper import TransactionHelper
 
 
 from dotenv import load_dotenv, set_key
@@ -23,10 +24,9 @@ from dotenv import load_dotenv, set_key
 from jupiter_python_sdk.jupiter import Jupiter
 
 from solana.rpc.async_api import AsyncClient
-from solana.rpc.commitment import Confirmed
 
-from solders.keypair import Keypair  # type: ignore
-
+from solders.keypair import Keypair
+from solders.transaction import VersionedTransaction
 
 logger = logging.getLogger("connections.solana_connection")
 
@@ -216,6 +216,15 @@ class SolanaConnection(BaseConnection):
                 ],
                 description="Launch a Pump & Fun token",
             ),
+            "send-transaction": Action(
+                name="send-transaction",
+                parameters=[
+                    ActionParameter("tx", True, str, "Hex-encoded transaction"),
+                    ActionParameter("compute_unit_price", True, int, "Compute unit price"),
+                    ActionParameter("compute_unit_limit", False, int, "Compute unit limit"),
+                ],
+                description="Send a hex-encoded transaction transaction",
+            ),
         }
 
     def configure(self) -> bool:
@@ -282,6 +291,9 @@ class SolanaConnection(BaseConnection):
                     error_msg = f"API validation error: {error_msg}"
                 logger.debug(f"Solana Configuration validation failed: {error_msg}")
             return False
+
+    def get_address(self) -> str:
+        return str(self._get_wallet().pubkey())
 
     def transfer(
         self, to_address: str, amount: float, token_mint: Optional[str] = None
@@ -414,6 +426,31 @@ class SolanaConnection(BaseConnection):
         #    f"Launched Pump & Fun token {token_ticker}\nToken Mint: {res['mint']}"
         # )
         # return res
+    
+    """WARNING: PARTIALLY TESTED"""
+    def send_transaction(self, tx: str, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+        """Send a hex-encoded transaction"""
+        # Clean the input
+        tx = tx.strip().replace(" ", "").replace("\n", "").lstrip("0x0")
+
+        # Ensure hex string has even length
+        if len(tx) % 2 != 0:
+            tx = "0" + tx 
+        try:
+            tx_bytes = bytes.fromhex(tx)  # Convert to bytes
+            transaction = VersionedTransaction.from_bytes(tx_bytes)
+        except ValueError as e:
+            raise ValueError(f"Hex decoding error: {e}")
+
+        res = self._send_transaction(transaction, compute_unit_price, compute_unit_limit)
+        res = asyncio.run(res)
+        return res
+
+    async def _send_transaction(self, transaction: VersionedTransaction, compute_unit_price: int, compute_unit_limit: Optional[int] = None) -> str:
+        async_client = self._get_connection_async()
+        wallet = self._get_wallet()
+
+        return await TransactionHelper.send_transaction(async_client, wallet, transaction, compute_unit_price, compute_unit_limit)
 
     def perform_action(self, action_name: str, kwargs) -> Any:
         """Execute a Solana action with validation"""

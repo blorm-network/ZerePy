@@ -21,6 +21,7 @@ from src.connections.ethereum_connection import EthereumConnection
 from src.connections.together_connection import TogetherAIConnection
 from src.connections.evm_connection import EVMConnection
 from src.connections.perplexity_connection import PerplexityConnection
+from src.connections.debridge_connection import DebridgeConnection
 from src.connections.monad_connection import MonadConnection
 
 logger = logging.getLogger("connection_manager")
@@ -74,6 +75,8 @@ class ConnectionManager:
             return EVMConnection
         elif class_name == "perplexity":
             return PerplexityConnection
+        elif class_name == "debridge":
+            return DebridgeConnection
         elif class_name == "monad":
             return MonadConnection
         return None
@@ -90,7 +93,10 @@ class ConnectionManager:
         try:
             name = config_dic["name"]
             connection_class = self._class_name_to_type(name)
-            connection = connection_class(config_dic)
+            if name == "debridge":
+                connection = DebridgeConnection(config_dic, self.connections)
+            else: 
+                connection = connection_class(config_dic)
             self.connections[name] = connection
         except Exception as e:
             logging.error(f"Failed to initialize connection {name}: {e}")

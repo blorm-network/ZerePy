@@ -257,6 +257,50 @@ Each plugin has its own configuration options that can be specified in the agent
 
 ### GOAT
 
+### Blockchain Networks
+- Solana
+  - SOL/SPL transfers and swaps via Jupiter
+  - Staking and balance management
+  - Network monitoring and token queries
+
+- EVM Networks
+  - Ethereum/Base/Polygon
+    - ETH/ERC-20 transfers and swaps
+    - Kyberswap integration
+    - Balance and token queries
+  - Sonic
+    - Fast EVM transactions
+    - Custom slippage settings
+    - Token swaps via Sonic DEX
+    - Network switching (mainnet/testnet)
+  - DeBridge - Bridge tokens across multiple chains
+- EternalAI
+  - Transform agents to smart contracts
+  - Deploy on 10+ blockchains
+  - Onchain system prompts
+  - Decentralized inference
+
+### Social Platforms
+- Twitter/X
+  - Post and reply to tweets
+  - Timeline management
+  - Engagement features
+
+- Farcaster
+  - Cast creation and interactions
+  - Timeline and reply management
+  - Like/requote functionality
+
+- Discord
+  - Channel management
+  - Message operations
+  - Reaction handling
+
+- Echochambers
+  - Room messaging and context
+  - History tracking
+  - Topic management
+=======
 - Interact with EVM chains through a unified interface
 - Manage ERC20 tokens:
   - Check token balances

@@ -22,6 +22,7 @@ from src.connections.together_connection import TogetherAIConnection
 from src.connections.evm_connection import EVMConnection
 from src.connections.perplexity_connection import PerplexityConnection
 from src.connections.debridge_connection import DebridgeConnection
+from src.connections.monad_connection import MonadConnection
 
 logger = logging.getLogger("connection_manager")
 
@@ -76,6 +77,8 @@ class ConnectionManager:
             return PerplexityConnection
         elif class_name == "debridge":
             return DebridgeConnection
+        elif class_name == "monad":
+            return MonadConnection
         return None
 
     def _register_connection(self, config_dic: Dict[str, Any]) -> None:

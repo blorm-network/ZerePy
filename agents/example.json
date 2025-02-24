@@ -100,10 +100,17 @@
       "chain_slug": "testnet"
     },
     {
+      "name": "debridge",
+      "api_url": "https://dln.debridge.finance/v1.0"
+    },
+    {
+      "name": "ethereum",
+      "rpc": "https://eth.blockrazor.xyz"  
+    },
+    {
       "name": "evm",
       "network": "ethereum"
      },
-    
     {
       "name": "discord",
       "message_read_count": 10,

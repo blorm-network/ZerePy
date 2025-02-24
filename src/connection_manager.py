@@ -16,6 +16,7 @@ from src.connections.galadriel_connection import GaladrielConnection
 from src.connections.sonic_connection import SonicConnection
 from src.connections.discord_connection import DiscordConnection
 from src.connections.allora_connection import AlloraConnection
+from src.connections.debridge_connection import DeBridgeConnection
 from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
 from src.connections.together_connection import TogetherAIConnection
@@ -64,6 +65,8 @@ class ConnectionManager:
             return DiscordConnection
         elif class_name == "allora":
             return AlloraConnection
+        elif class_name == "debridge":
+            return DeBridgeConnection
         elif class_name == "xai":
             return XAIConnection
         elif class_name == "ethereum":
@@ -92,6 +95,15 @@ class ConnectionManager:
             connection_class = self._class_name_to_type(name)
             connection = connection_class(config_dic)
             self.connections[name] = connection
+
+            # If this is a DeBridge connection, set its Solana connection
+            if name == "debridge":
+                solana_connection = self.connections.get("solana")
+                if solana_connection:
+                    connection.set_solana_connection(solana_connection)
+                else:
+                    logging.error("DeBridge requires a Solana connection. Make sure to configure it in the agent config.")
+
         except Exception as e:
             logging.error(f"Failed to initialize connection {name}: {e}")
 

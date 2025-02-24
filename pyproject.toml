@@ -1,8 +1,9 @@
 [tool.poetry]
 name = "ZerePy"
 version = "0.1.0"
+package-mode = false
 description = "A launch-pad for AI agents"
-authors = ["Ayoub Ed <ayoub@blorm.xyz>", "Efrain <ef@blorm.xyz>", "Max <max@blorm.xyz>"]
+authors = ["Ayoub Ed <ayoub@blorm.xyz>", "Efrain <ef@blorm.xyz>", "Max <max@blorm.xyz>", "Rux <maxrux@blorm.xyz>", "Peter <peter@blorm.xyz>"]
 license = "MIT License"
 readme = "README.md"
 

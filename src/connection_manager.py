@@ -19,6 +19,8 @@ from src.connections.allora_connection import AlloraConnection
 from src.connections.xai_connection import XAIConnection
 from src.connections.ethereum_connection import EthereumConnection
 from src.connections.together_connection import TogetherAIConnection
+from src.connections.evm_connection import EVMConnection
+from src.connections.perplexity_connection import PerplexityConnection
 from src.connections.mira_connection import MiraConnection
 
 logger = logging.getLogger("connection_manager")
@@ -68,6 +70,10 @@ class ConnectionManager:
             return EthereumConnection
         elif class_name == "together":
             return TogetherAIConnection
+        elif class_name == "evm":
+            return EVMConnection
+        elif class_name == "perplexity":
+            return PerplexityConnection
         elif class_name == "mira":
             return MiraConnection
         return None

@@ -21,12 +21,12 @@ EVM_NETWORKS = {
     },
     "base": {
         "rpc_url": "https://mainnet.base.org",
-        "scanner_url": "api.basescan.org",
+        "scanner_url": "basescan.org",
         "chain_id": 8453
     },
     "polygon": {
         "rpc_url": "https://polygon-rpc.com",
-        "scanner_url": "api.polygonscan.com",
+        "scanner_url": "polygonscan.com",
         "chain_id": 137
     }
 }

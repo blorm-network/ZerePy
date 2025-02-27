@@ -113,6 +113,10 @@
     {
       "name": "monad",
       "rpc": "https://testnet-rpc.monad.xyz/"
+    },
+    {
+      "name": "perplexity",
+      "model": "sonar-reasoning-pro"
     }
   ],
   "tasks": [

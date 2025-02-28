@@ -42,11 +42,11 @@
     {
       "name": "xai",
       "model": "grok-2-latest"
-    },    
+    },
     {
       "name": "together",
       "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
-    },    
+    },
     {
       "name": "solana",
       "rpc": "https://api.mainnet-beta.solana.com"
@@ -84,6 +84,10 @@
       "temperature": 0.5
     },
     {
+      "name": "mira",
+      "model": "deepseek-r1"
+    },
+    {
       "name": "hyperbolic",
       "model": "meta-llama/Meta-Llama-3-70B-Instruct"
     },
@@ -102,8 +106,7 @@
     {
       "name": "evm",
       "network": "ethereum"
-     },
-    
+     }, 
     {
       "name": "discord",
       "message_read_count": 10,

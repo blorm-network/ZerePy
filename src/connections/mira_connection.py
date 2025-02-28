@@ -85,7 +85,7 @@ class MiraConnection(BaseConnection):
             if not api_key:
                 raise MiraConfigurationError("Mira API key not found in environment")
             self._client = MiraSyncClient(
-                base_url="https://apis.mira.network",
+                base_url="https://api.mira.network",
                 api_key=api_key
             )
         return self._client
@@ -115,7 +115,7 @@ class MiraConnection(BaseConnection):
             # Validate the API key by trying to list models
             client = MiraSyncClient(
                 api_key=api_key,
-                base_url="https://apis.mira.network"
+                base_url="https://api.mira.network"
             )
             client.list_models()
 
@@ -137,7 +137,7 @@ class MiraConnection(BaseConnection):
 
             client = MiraSyncClient(
                 api_key=api_key,
-                base_url="https://apis.mira.network"
+                base_url="https://api.mira.network"
             )
             client.list_models()
             return True

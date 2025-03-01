@@ -1,0 +1,94 @@
+2025-03-01 12:24:06,727 - INFO - actions.sonic_actions - Starting berry temperature monitoring...
+2025-03-01 12:24:06,727 - INFO - actions.sonic_actions - [Batch #0] Using mock temperature data: 2.5°C
+2025-03-01 12:24:06,727 - INFO - actions.sonic_actions - [Batch #0] Auto-determined location: Transport
+2025-03-01 12:24:06,727 - INFO - actions.sonic_actions - [Batch #0] Recording temperature 2.5°C at Transport
+2025-03-01 12:24:12,712 - INFO - actions.sonic_actions - [Batch #0] Temperature recording transaction: {'success': True, 'transaction_hash': '0xf57d16daf4c4ba1348a47c786c636d9962cfc85187b49cbed74dd2636008cc08', 'transaction_url': 'https://testnet.sonicscan.org/tx/0xf57d16daf4c4ba1348a47c786c636d9962cfc85187b49cbed74dd2636008cc08', 'gas_used': 287080, 'effective_gas_price': 10000000000}
+2025-03-01 12:24:12,712 - INFO - actions.sonic_actions - [Batch #0] Temperature monitoring completed in 5.98 seconds
+2025-03-01 12:24:22,713 - INFO - actions.sonic_actions - Starting berry temperature monitoring...
+2025-03-01 12:24:22,713 - INFO - actions.sonic_actions - [Batch #0] Using mock temperature data: 3.8°C
+2025-03-01 12:24:22,713 - INFO - actions.sonic_actions - [Batch #0] Auto-determined location: Transport
+2025-03-01 12:24:22,713 - INFO - actions.sonic_actions - [Batch #0] Recording temperature 3.8°C at Transport
+2025-03-01 12:24:28,398 - INFO - actions.sonic_actions - [Batch #0] Temperature recording transaction: {'success': True, 'transaction_hash': '0x91eba23a06769ce43c1d65041d7e423c9b9b94a1df46497b9f2175537f8bee1f', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x91eba23a06769ce43c1d65041d7e423c9b9b94a1df46497b9f2175537f8bee1f', 'gas_used': 287080, 'effective_gas_price': 10000000000}
+2025-03-01 12:24:28,398 - INFO - actions.sonic_actions - [Batch #0] Temperature monitoring completed in 5.69 seconds
+2025-03-01 12:24:38,399 - INFO - actions.sonic_actions - Managing batch lifecycle...
+2025-03-01 12:28:54,638 - INFO - actions.sonic_actions - Processing agent recommendations...
+2025-03-01 12:28:54,638 - INFO - actions.sonic_actions - [Batch #0] Quality score not provided, fetching from quality management
+2025-03-01 12:28:54,638 - INFO - actions.sonic_actions - Starting berry quality assessment...
+2025-03-01 12:28:56,213 - INFO - actions.sonic_actions - [Batch #0] Berry type: Strawberry
+2025-03-01 12:28:56,213 - INFO - actions.sonic_actions - [Batch #0] Base shelf life for Strawberry: 72 hours
+2025-03-01 12:28:56,213 - INFO - actions.sonic_actions - [Batch #0] Temperature breach statistics: 14/50 readings (28.0%)
+2025-03-01 12:28:56,213 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): quality_alert - Low quality score detected: 50.0/100 for batch 0 (Strawberry). Action: Reject
+2025-03-01 12:28:56,213 - INFO - actions.sonic_actions - [Batch #0] Quality assessment complete: Reject, Score: 50.0/100, Shelf life: 32.0 hours
+2025-03-01 12:28:56,213 - INFO - actions.sonic_actions - [Batch #0] Fetched quality score: 50.0, action: Reject
+2025-03-01 12:29:00,504 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing transaction: {'success': False, 'transaction_hash': '0xc015aa54ab3e9819ec0a132ee7cdb5f39129595b5f1f1d896e25d333c0d6f8ae', 'transaction_url': 'https://testnet.sonicscan.org/tx/0xc015aa54ab3e9819ec0a132ee7cdb5f39129595b5f1f1d896e25d333c0d6f8ae', 'gas_used': 493662, 'effective_gas_price': 10000000000}
+2025-03-01 12:29:01,292 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): supplier_warning - Supplier warning issued for batch 0 due to low quality score: 50.0/100
+2025-03-01 12:29:01,292 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing complete in 6.65 seconds
+2025-03-01 12:29:11,294 - INFO - actions.sonic_actions - Processing agent recommendations...
+2025-03-01 12:29:11,294 - INFO - actions.sonic_actions - [Batch #0] Quality score not provided, fetching from quality management
+2025-03-01 12:29:11,294 - INFO - actions.sonic_actions - Starting berry quality assessment...
+2025-03-01 12:29:12,738 - INFO - actions.sonic_actions - [Batch #0] Berry type: Strawberry
+2025-03-01 12:29:12,738 - INFO - actions.sonic_actions - [Batch #0] Base shelf life for Strawberry: 72 hours
+2025-03-01 12:29:12,738 - INFO - actions.sonic_actions - [Batch #0] Temperature breach statistics: 14/50 readings (28.0%)
+2025-03-01 12:29:12,739 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): quality_alert - Low quality score detected: 50.0/100 for batch 0 (Strawberry). Action: Reject
+2025-03-01 12:29:12,739 - INFO - actions.sonic_actions - [Batch #0] Quality assessment complete: Reject, Score: 50.0/100, Shelf life: 32.0 hours
+2025-03-01 12:29:12,739 - INFO - actions.sonic_actions - [Batch #0] Fetched quality score: 50.0, action: Reject
+2025-03-01 12:29:16,765 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing transaction: {'success': False, 'transaction_hash': '0x37a9716368b3046b02f14b5f4bf3e0cac8f747c1c41b6ec1417e2bc4f5663331', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x37a9716368b3046b02f14b5f4bf3e0cac8f747c1c41b6ec1417e2bc4f5663331', 'gas_used': 493662, 'effective_gas_price': 10000000000}
+2025-03-01 12:29:17,311 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): supplier_warning - Supplier warning issued for batch 0 due to low quality score: 50.0/100
+2025-03-01 12:29:17,311 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing complete in 6.02 seconds
+2025-03-01 13:03:05,151 - INFO - actions.sonic_actions - Starting berry temperature monitoring...
+2025-03-01 13:03:05,151 - INFO - actions.sonic_actions - [Batch #0] Using mock temperature data: 2.9°C
+2025-03-01 13:03:05,152 - INFO - actions.sonic_actions - [Batch #0] Auto-determined location: Transport
+2025-03-01 13:03:05,152 - INFO - actions.sonic_actions - [Batch #0] Recording temperature 2.9°C at Transport
+2025-03-01 13:03:12,693 - INFO - actions.sonic_actions - [Batch #0] Temperature recording transaction: {'success': True, 'transaction_hash': '0x9c9e05a849b10066ef8fd3d70c2160d7ab38312d9366cbd3a30c49bef3aee022', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x9c9e05a849b10066ef8fd3d70c2160d7ab38312d9366cbd3a30c49bef3aee022', 'gas_used': 287080, 'effective_gas_price': 10000000000}
+2025-03-01 13:03:12,693 - INFO - actions.sonic_actions - [Batch #0] Temperature monitoring completed in 7.54 seconds
+2025-03-01 13:03:22,694 - INFO - actions.sonic_actions - Processing agent recommendations...
+2025-03-01 13:03:22,694 - INFO - actions.sonic_actions - [Batch #0] Quality score not provided, fetching from quality management
+2025-03-01 13:03:22,694 - INFO - actions.sonic_actions - Starting berry quality assessment...
+2025-03-01 13:03:24,730 - INFO - actions.sonic_actions - [Batch #0] Berry type: Strawberry
+2025-03-01 13:03:24,730 - INFO - actions.sonic_actions - [Batch #0] Base shelf life for Strawberry: 72 hours
+2025-03-01 13:03:24,730 - INFO - actions.sonic_actions - [Batch #0] Temperature breach statistics: 14/51 readings (27.5%)
+2025-03-01 13:03:24,730 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): quality_alert - Low quality score detected: 50.0/100 for batch 0 (Strawberry). Action: Reject
+2025-03-01 13:03:24,730 - INFO - actions.sonic_actions - [Batch #0] Quality assessment complete: Reject, Score: 50.0/100, Shelf life: 32.0 hours
+2025-03-01 13:03:24,730 - INFO - actions.sonic_actions - [Batch #0] Fetched quality score: 50.0, action: Reject
+2025-03-01 13:03:29,492 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing transaction: {'success': False, 'transaction_hash': '0x6c73dea0024cfed7a7af3ddf71703e3583978d1029f5503a7192a662c1e107a5', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x6c73dea0024cfed7a7af3ddf71703e3583978d1029f5503a7192a662c1e107a5', 'gas_used': 493662, 'effective_gas_price': 10000000000}
+2025-03-01 13:03:30,459 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): supplier_warning - Supplier warning issued for batch 0 due to low quality score: 50.0/100
+2025-03-01 13:03:30,459 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing complete in 7.77 seconds
+2025-03-01 13:26:54,917 - INFO - actions.sonic_actions - Processing agent recommendations...
+2025-03-01 13:26:54,917 - INFO - actions.sonic_actions - [Batch #0] Quality score not provided, fetching from quality management
+2025-03-01 13:26:54,917 - INFO - actions.sonic_actions - Starting berry quality assessment...
+2025-03-01 13:26:56,842 - INFO - actions.sonic_actions - [Batch #0] Berry type: Strawberry
+2025-03-01 13:26:56,842 - INFO - actions.sonic_actions - [Batch #0] Base shelf life for Strawberry: 72 hours
+2025-03-01 13:26:56,842 - INFO - actions.sonic_actions - [Batch #0] Temperature breach statistics: 14/51 readings (27.5%)
+2025-03-01 13:26:56,842 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): quality_alert - Low quality score detected: 50.0/100 for batch 0 (Strawberry). Action: Reject
+2025-03-01 13:26:56,842 - INFO - actions.sonic_actions - [Batch #0] Quality assessment complete: Reject, Score: 50.0/100, Shelf life: 32.0 hours
+2025-03-01 13:26:56,843 - INFO - actions.sonic_actions - [Batch #0] Fetched quality score: 50.0, action: Reject
+2025-03-01 13:27:02,891 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing transaction: {'success': False, 'transaction_hash': '0x6c38971fe3fdbc0fd8e373a66482d7c204ba98a92bc57bf28dcfeaa09387442a', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x6c38971fe3fdbc0fd8e373a66482d7c204ba98a92bc57bf28dcfeaa09387442a', 'gas_used': 493662, 'effective_gas_price': 10000000000, 'execution_time': 6.047861576080322}
+2025-03-01 13:27:03,875 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): supplier_warning - Supplier warning issued for batch 0 due to low quality score: 50.0/100
+2025-03-01 13:27:03,875 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing complete in 8.96 seconds
+2025-03-01 13:27:13,876 - INFO - actions.sonic_actions - Starting berry temperature monitoring...
+2025-03-01 13:27:13,876 - INFO - actions.sonic_actions - [Batch #0] Using mock temperature data: 3.1°C
+2025-03-01 13:27:13,877 - INFO - actions.sonic_actions - [Batch #0] Auto-determined location: Transport
+2025-03-01 13:27:13,877 - INFO - actions.sonic_actions - [Batch #0] Recording temperature 3.1°C at Transport
+2025-03-01 13:27:25,446 - INFO - actions.sonic_actions - [Batch #0] Temperature recording transaction: {'success': True, 'transaction_hash': '0x47f161e6d63706cb208c95b3c741f5ce9a6256820c43e4facefe911f6d25590b', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x47f161e6d63706cb208c95b3c741f5ce9a6256820c43e4facefe911f6d25590b', 'gas_used': 283305, 'effective_gas_price': 10000000000, 'execution_time': 11.569294929504395}
+2025-03-01 13:27:25,446 - INFO - actions.sonic_actions - [Batch #0] Temperature monitoring completed in 11.57 seconds
+2025-03-01 13:27:35,447 - INFO - actions.sonic_actions - Managing batch lifecycle...
+2025-03-01 13:27:46,902 - INFO - actions.sonic_actions - Batch creation transaction: {'success': True, 'transaction_hash': '0xa6f3f2d681b1a511510535f66e8acea40360c11b428f6b7bd297bded6c9c6820', 'transaction_url': 'https://testnet.sonicscan.org/tx/0xa6f3f2d681b1a511510535f66e8acea40360c11b428f6b7bd297bded6c9c6820', 'gas_used': 178917, 'effective_gas_price': 10000000000, 'execution_time': 11.455014705657959}
+2025-03-01 13:27:48,007 - INFO - actions.sonic_actions - Created new batch #35 (Strawberry) in 12.56 seconds
+2025-03-01 13:27:58,008 - INFO - actions.sonic_actions - Starting berry temperature monitoring...
+2025-03-01 13:27:58,008 - INFO - actions.sonic_actions - [Batch #0] Using mock temperature data: 3.8°C
+2025-03-01 13:27:58,008 - INFO - actions.sonic_actions - [Batch #0] Auto-determined location: Transport
+2025-03-01 13:27:58,008 - INFO - actions.sonic_actions - [Batch #0] Recording temperature 3.8°C at Transport
+2025-03-01 13:28:09,487 - INFO - actions.sonic_actions - [Batch #0] Temperature recording transaction: {'success': True, 'transaction_hash': '0x0ca93deaef6a9e20b73783a850d7b4b1c0c1dbef1a01d13e478411e893cd431c', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x0ca93deaef6a9e20b73783a850d7b4b1c0c1dbef1a01d13e478411e893cd431c', 'gas_used': 283305, 'effective_gas_price': 10000000000, 'execution_time': 11.478889465332031}
+2025-03-01 13:28:09,487 - INFO - actions.sonic_actions - [Batch #0] Temperature monitoring completed in 11.48 seconds
+2025-03-01 13:28:19,488 - INFO - actions.sonic_actions - Processing agent recommendations...
+2025-03-01 13:28:19,488 - INFO - actions.sonic_actions - [Batch #0] Quality score not provided, fetching from quality management
+2025-03-01 13:28:19,488 - INFO - actions.sonic_actions - Starting berry quality assessment...
+2025-03-01 13:28:21,373 - INFO - actions.sonic_actions - [Batch #0] Berry type: Strawberry
+2025-03-01 13:28:21,373 - INFO - actions.sonic_actions - [Batch #0] Base shelf life for Strawberry: 72 hours
+2025-03-01 13:28:21,373 - INFO - actions.sonic_actions - [Batch #0] Temperature breach statistics: 14/53 readings (26.4%)
+2025-03-01 13:28:21,373 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): quality_alert - Low quality score detected: 50.0/100 for batch 0 (Strawberry). Action: Reject
+2025-03-01 13:28:21,373 - INFO - actions.sonic_actions - [Batch #0] Quality assessment complete: Reject, Score: 50.0/100, Shelf life: 32.0 hours
+2025-03-01 13:28:21,373 - INFO - actions.sonic_actions - [Batch #0] Fetched quality score: 50.0, action: Reject
+2025-03-01 13:28:27,601 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing transaction: {'success': False, 'transaction_hash': '0x745c0a10c4ea5c77b739f690bc310df3aee745d9bed4142b8509828932c751d0', 'transaction_url': 'https://testnet.sonicscan.org/tx/0x745c0a10c4ea5c77b739f690bc310df3aee745d9bed4142b8509828932c751d0', 'gas_used': 493662, 'effective_gas_price': 10000000000, 'execution_time': 6.227843523025513}
+2025-03-01 13:28:28,527 - INFO - actions.sonic_actions - Alert would be sent (alerting disabled): supplier_warning - Supplier warning issued for batch 0 due to low quality score: 50.0/100
+2025-03-01 13:28:28,527 - INFO - actions.sonic_actions - [Batch #0] Recommendation processing complete in 9.04 seconds

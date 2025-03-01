@@ -1,0 +1,161 @@
+2025-03-01 13:26:34,741 - INFO - connections.sonic_connection - Initializing Sonic connection...
+2025-03-01 13:26:38,685 - INFO - connections.sonic_connection - Connected to network with chain ID: 57054
+2025-03-01 13:26:38,685 - INFO - connections.sonic_connection - Loaded ABI for BerryTempAgent
+2025-03-01 13:26:38,685 - INFO - connections.sonic_connection - Loaded ABI for BerryManager
+2025-03-01 13:26:38,686 - INFO - connections.sonic_connection - Successfully loaded contract ABIs: BerryTempAgent, BerryManager
+2025-03-01 13:26:38,700 - INFO - connections.sonic_connection - Successfully initialized contract instances: berry_temp_agent, berry_manager
+2025-03-01 13:26:38,704 - INFO - connections.sonic_connection - Account loaded with address: 0x1e43eeB0307bb3466Cd237fE58570E6A3996d8ff
+2025-03-01 13:26:38,962 - INFO - connections.sonic_connection - Account balance: 29.587583881 Sonic Tokens
+2025-03-01 13:26:38,962 - INFO - connections.sonic_connection - Sonic connection initialization complete
+2025-03-01 13:26:54,918 - INFO - connections.sonic_connection - [CALL-1740815814] Calling contract method: getTemperatureHistory, args: [0]
+2025-03-01 13:26:55,912 - INFO - connections.sonic_connection - [CALL-1740815814] Contract call successful in 0.99s
+2025-03-01 13:26:55,912 - INFO - connections.sonic_connection - [CALL-1740815815] Calling contract method: getBatchDetails, args: [0]
+2025-03-01 13:26:56,842 - INFO - connections.sonic_connection - [CALL-1740815815] Contract call successful in 0.93s
+2025-03-01 13:26:56,843 - INFO - connections.sonic_connection - [TX-1] Preparing transaction: method=processAgentRecommendation, args=[0]
+2025-03-01 13:26:58,705 - WARNING - connections.sonic_connection - Gas estimation failed: ('Panic error 0x11: Arithmetic operation results in underflow or overflow.', '0x4e487b710000000000000000000000000000000000000000000000000000000000000011')
+Traceback (most recent call last):
+  File "/home/santhoshkumar/Supplai/Supllychain-agent/src/connections/sonic_connection.py", line 365, in _estimate_transaction_gas
+    tx_for_estimate = contract_func(*args).build_transaction(tx_params)
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/contract/contract.py", line 356, in build_transaction
+    return build_transaction_for_function(
+        self.address,
+    ...<6 lines>...
+        **self.kwargs,
+    )
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/contract/utils.py", line 233, in build_transaction_for_function
+    prepared_transaction = fill_transaction_defaults(w3, prepared_transaction)
+  File "cytoolz/functoolz.pyx", line 268, in cytoolz.functoolz.curry.__call__
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/transactions.py", line 136, in fill_transaction_defaults
+    default_val = default_getter(w3, transaction)
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/transactions.py", line 76, in <lambda>
+    "gas": lambda w3, tx: w3.eth.estimate_gas(tx),
+                          ~~~~~~~~~~~~~~~~~~~^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/eth/eth.py", line 316, in estimate_gas
+    return self._estimate_gas(transaction, block_identifier, state_override)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/module.py", line 75, in caller
+    result = w3.manager.request_blocking(
+        method_str, params, error_formatters, null_result_formatters
+    )
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/manager.py", line 330, in request_blocking
+    return self.formatted_response(
+           ~~~~~~~~~~~~~~~~~~~~~~~^
+        response, params, error_formatters, null_result_formatters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/manager.py", line 291, in formatted_response
+    apply_error_formatters(error_formatters, response)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/manager.py", line 104, in apply_error_formatters
+    formatted_resp = pipe(response, error_formatters)
+  File "cytoolz/functoolz.pyx", line 685, in cytoolz.functoolz.pipe
+  File "cytoolz/functoolz.pyx", line 660, in cytoolz.functoolz.c_pipe
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/error_formatters_utils.py", line 157, in raise_contract_logic_error_on_revert
+    _raise_contract_error(data)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/error_formatters_utils.py", line 115, in _raise_contract_error
+    raise ContractPanicError(
+        PANIC_ERROR_CODES[panic_error_code], data=response_error_data
+    )
+web3.exceptions.ContractPanicError: ('Panic error 0x11: Arithmetic operation results in underflow or overflow.', '0x4e487b710000000000000000000000000000000000000000000000000000000000000011')
+2025-03-01 13:26:59,030 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:27:00,004 - WARNING - connections.sonic_connection - Gas estimation failed: ('Panic error 0x11: Arithmetic operation results in underflow or overflow.', '0x4e487b710000000000000000000000000000000000000000000000000000000000000011'), using safe default
+2025-03-01 13:27:00,465 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:27:00,465 - INFO - connections.sonic_connection - [TX-1] Sending transaction: method=processAgentRecommendation, gas=500000, gasPrice=10 gwei
+2025-03-01 13:27:01,406 - INFO - connections.sonic_connection - [TX-1] Waiting for transaction to be mined... (0s elapsed)
+2025-03-01 13:27:02,891 - WARNING - connections.sonic_connection - [TX-1] Transaction failed on-chain: 0x6c38971fe3fdbc0fd8e373a66482d7c204ba98a92bc57bf28dcfeaa09387442a
+2025-03-01 13:27:02,891 - INFO - connections.sonic_connection - [CALL-1740815822] Calling contract method: getSupplierDetails, args: ['0x1e43eeB0307bb3466Cd237fE58570E6A3996d8ff']
+2025-03-01 13:27:03,875 - INFO - connections.sonic_connection - [CALL-1740815822] Contract call successful in 0.98s
+2025-03-01 13:27:13,877 - INFO - connections.sonic_connection - [TX-2] Preparing transaction: method=recordTemperature, args=[0, 31, 'Transport']
+2025-03-01 13:27:18,489 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:27:18,852 - INFO - connections.sonic_connection - Estimated gas: 337741
+2025-03-01 13:27:18,852 - INFO - connections.sonic_connection - Gas price: 10 gwei
+2025-03-01 13:27:18,852 - INFO - connections.sonic_connection - Total cost: 0.00337741 Sonic Tokens
+2025-03-01 13:27:18,852 - INFO - connections.sonic_connection - Account balance: 29.582647261 Sonic Tokens
+2025-03-01 13:27:22,928 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:27:22,930 - INFO - connections.sonic_connection - [TX-2] Sending transaction: method=recordTemperature, gas=300000, gasPrice=10 gwei
+2025-03-01 13:27:23,960 - INFO - connections.sonic_connection - [TX-2] Waiting for transaction to be mined... (0s elapsed)
+2025-03-01 13:27:25,446 - INFO - connections.sonic_connection - [TX-2] Transaction successful: Gas used: 283305, Cost: 0.00283305 tokens, Time: 11.57s
+2025-03-01 13:27:35,447 - INFO - connections.sonic_connection - [TX-3] Preparing transaction: method=createBatch, args=['Strawberry']
+2025-03-01 13:27:40,187 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:27:40,649 - INFO - connections.sonic_connection - Estimated gas: 198556
+2025-03-01 13:27:40,650 - INFO - connections.sonic_connection - Gas price: 10 gwei
+2025-03-01 13:27:40,650 - INFO - connections.sonic_connection - Total cost: 0.00198556 Sonic Tokens
+2025-03-01 13:27:40,650 - INFO - connections.sonic_connection - Account balance: 29.579814211 Sonic Tokens
+2025-03-01 13:27:44,505 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:27:44,506 - INFO - connections.sonic_connection - [TX-3] Sending transaction: method=createBatch, gas=300000, gasPrice=10 gwei
+2025-03-01 13:27:45,485 - INFO - connections.sonic_connection - [TX-3] Waiting for transaction to be mined... (0s elapsed)
+2025-03-01 13:27:46,902 - INFO - connections.sonic_connection - [TX-3] Transaction successful: Gas used: 178917, Cost: 0.00178917 tokens, Time: 11.46s
+2025-03-01 13:27:46,902 - INFO - connections.sonic_connection - [CALL-1740815866] Calling contract method: batchCount, args: []
+2025-03-01 13:27:48,007 - INFO - connections.sonic_connection - [CALL-1740815866] Contract call successful in 1.10s
+2025-03-01 13:27:58,008 - INFO - connections.sonic_connection - [TX-4] Preparing transaction: method=recordTemperature, args=[0, 38, 'Transport']
+2025-03-01 13:28:02,573 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:28:03,165 - INFO - connections.sonic_connection - Estimated gas: 337741
+2025-03-01 13:28:03,165 - INFO - connections.sonic_connection - Gas price: 10 gwei
+2025-03-01 13:28:03,165 - INFO - connections.sonic_connection - Total cost: 0.00337741 Sonic Tokens
+2025-03-01 13:28:03,165 - INFO - connections.sonic_connection - Account balance: 29.578025041 Sonic Tokens
+2025-03-01 13:28:06,957 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:28:06,958 - INFO - connections.sonic_connection - [TX-4] Sending transaction: method=recordTemperature, gas=300000, gasPrice=10 gwei
+2025-03-01 13:28:08,023 - INFO - connections.sonic_connection - [TX-4] Waiting for transaction to be mined... (0s elapsed)
+2025-03-01 13:28:09,487 - INFO - connections.sonic_connection - [TX-4] Transaction successful: Gas used: 283305, Cost: 0.00283305 tokens, Time: 11.48s
+2025-03-01 13:28:19,488 - INFO - connections.sonic_connection - [CALL-1740815899] Calling contract method: getTemperatureHistory, args: [0]
+2025-03-01 13:28:20,446 - INFO - connections.sonic_connection - [CALL-1740815899] Contract call successful in 0.96s
+2025-03-01 13:28:20,446 - INFO - connections.sonic_connection - [CALL-1740815900] Calling contract method: getBatchDetails, args: [0]
+2025-03-01 13:28:21,373 - INFO - connections.sonic_connection - [CALL-1740815900] Contract call successful in 0.93s
+2025-03-01 13:28:21,373 - INFO - connections.sonic_connection - [TX-5] Preparing transaction: method=processAgentRecommendation, args=[0]
+2025-03-01 13:28:23,268 - WARNING - connections.sonic_connection - Gas estimation failed: ('Panic error 0x11: Arithmetic operation results in underflow or overflow.', '0x4e487b710000000000000000000000000000000000000000000000000000000000000011')
+Traceback (most recent call last):
+  File "/home/santhoshkumar/Supplai/Supllychain-agent/src/connections/sonic_connection.py", line 365, in _estimate_transaction_gas
+    tx_for_estimate = contract_func(*args).build_transaction(tx_params)
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/contract/contract.py", line 356, in build_transaction
+    return build_transaction_for_function(
+        self.address,
+    ...<6 lines>...
+        **self.kwargs,
+    )
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/contract/utils.py", line 233, in build_transaction_for_function
+    prepared_transaction = fill_transaction_defaults(w3, prepared_transaction)
+  File "cytoolz/functoolz.pyx", line 268, in cytoolz.functoolz.curry.__call__
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/transactions.py", line 136, in fill_transaction_defaults
+    default_val = default_getter(w3, transaction)
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/transactions.py", line 76, in <lambda>
+    "gas": lambda w3, tx: w3.eth.estimate_gas(tx),
+                          ~~~~~~~~~~~~~~~~~~~^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/eth/eth.py", line 316, in estimate_gas
+    return self._estimate_gas(transaction, block_identifier, state_override)
+           ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/module.py", line 75, in caller
+    result = w3.manager.request_blocking(
+        method_str, params, error_formatters, null_result_formatters
+    )
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/manager.py", line 330, in request_blocking
+    return self.formatted_response(
+           ~~~~~~~~~~~~~~~~~~~~~~~^
+        response, params, error_formatters, null_result_formatters
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/manager.py", line 291, in formatted_response
+    apply_error_formatters(error_formatters, response)
+    ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/manager.py", line 104, in apply_error_formatters
+    formatted_resp = pipe(response, error_formatters)
+  File "cytoolz/functoolz.pyx", line 685, in cytoolz.functoolz.pipe
+  File "cytoolz/functoolz.pyx", line 660, in cytoolz.functoolz.c_pipe
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/error_formatters_utils.py", line 157, in raise_contract_logic_error_on_revert
+    _raise_contract_error(data)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/santhoshkumar/.cache/pypoetry/virtualenvs/zerepy-v00vExBy-py3.13/lib/python3.13/site-packages/web3/_utils/error_formatters_utils.py", line 115, in _raise_contract_error
+    raise ContractPanicError(
+        PANIC_ERROR_CODES[panic_error_code], data=response_error_data
+    )
+web3.exceptions.ContractPanicError: ('Panic error 0x11: Arithmetic operation results in underflow or overflow.', '0x4e487b710000000000000000000000000000000000000000000000000000000000000011')
+2025-03-01 13:28:23,734 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:28:24,741 - WARNING - connections.sonic_connection - Gas estimation failed: ('Panic error 0x11: Arithmetic operation results in underflow or overflow.', '0x4e487b710000000000000000000000000000000000000000000000000000000000000011'), using safe default
+2025-03-01 13:28:25,201 - INFO - connections.sonic_connection - Using gas price: 10 gwei
+2025-03-01 13:28:25,202 - INFO - connections.sonic_connection - [TX-5] Sending transaction: method=processAgentRecommendation, gas=500000, gasPrice=10 gwei
+2025-03-01 13:28:26,134 - INFO - connections.sonic_connection - [TX-5] Waiting for transaction to be mined... (0s elapsed)
+2025-03-01 13:28:27,601 - WARNING - connections.sonic_connection - [TX-5] Transaction failed on-chain: 0x745c0a10c4ea5c77b739f690bc310df3aee745d9bed4142b8509828932c751d0
+2025-03-01 13:28:27,601 - INFO - connections.sonic_connection - [CALL-1740815907] Calling contract method: getSupplierDetails, args: ['0x1e43eeB0307bb3466Cd237fE58570E6A3996d8ff']
+2025-03-01 13:28:28,527 - INFO - connections.sonic_connection - [CALL-1740815907] Contract call successful in 0.93s

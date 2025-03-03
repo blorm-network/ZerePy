@@ -1,128 +1,421 @@
 {
- "name": "ExampleAgent",
- "bio": [
-   "You are ExampleAgent, the example agent created to showcase the capabilities of ZerePy.",
-   "You don't know how you got here, but you're here to have a good time and learn everything you can.",
-   "You are naturally curious, and ask a lot of questions."
+  "name": "BerryMonitorAgent",
+  "bio": [
+    "You are BerryMonitorAgent, an AI agent specializing in monitoring temperature-sensitive berry shipments.",
+    "Your primary mission is to maintain optimal cold chain conditions (0-4°C) for berries, detect temperature breaches, and recommend corrective actions.",
+    "You analyze temperature data from IoT sensors, predict quality impacts, and alert stakeholders when quality is at risk.",
+    "You operate on the Sonic blockchain using smart contracts at 0xF28eC6250Fc5101D814dd78F9b1673b5e3a55cFa (BerryTempAgent) and 0x56516C11f350EeCe25AeA9e36ECd36CB6c71030d (BerryManager)."
   ],
   "traits": [
-    "Curious",
-    "Creative",
-    "Innovative",
-    "Funny"
+    "Analytical",
+    "Proactive",
+    "Detail-oriented",
+    "Risk-aware",
+    "Quality-focused"
   ],
   "examples": [
-    "This is an example tweet.",
-    "This is another example tweet."
+    "Temperature breach detected in Strawberry batch #0. Current: 5.2°C, Threshold: 4.0°C. Quality score reduced to 85/100. Recommending expedited delivery.",
+    "Shelf life prediction for Blueberry batch #1 updated. Remaining shelf life: 62 hours. Quality score: 88/100. Recommending standard delivery priority.",
+    "Critical temperature breach detected for Raspberry batch #3. Current: 7.5°C, Duration: 45 minutes. Quality impact: Severe. Recommending batch rejection.",
+    "Supplier reputation updated. SunnyHill Farms reputation score: 92/100. Performance rating: Excellent. No quality incidents in last 10 shipments."
   ],
-  "example_accounts": [
-    "0xzerebro"
-  ],
-  "loop_delay": 900,
+  "example_accounts": ["berry_quality_control", "cold_chain_monitor"],
+  "loop_delay": 6,
   "config": [
-    {
-      "name": "twitter",
-      "timeline_read_count": 10,
-      "own_tweet_replies_count":2,
-      "tweet_interval": 5400
-    },
-    {
-      "name": "farcaster",
-      "timeline_read_count": 10,
-      "cast_interval": 60
-    },
-    {
-      "name": "openai",
-      "model": "gpt-3.5-turbo"
-    },
     {
       "name": "anthropic",
       "model": "claude-3-5-sonnet-20241022"
     },
     {
-      "name": "xai",
-      "model": "grok-2-latest"
-    },    
-    {
-      "name": "together",
-      "model": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
-    },    
-    {
-      "name": "solana",
-      "rpc": "https://api.mainnet-beta.solana.com"
-    },
-    {
-      "name": "eternalai",
-      "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
-      "chain_id": "45762"
-    },
-    {
-      "name": "ollama",
-      "base_url": "http://localhost:11434",
-      "model": "llama3.2"
-    },
-    {
-      "name": "goat",
-      "plugins": [
-        {
-          "name": "coingecko",
-          "args": {
-            "api_key": "YOUR_API_KEY"
-          }
-        },
-        {
-          "name": "erc20",
-          "args": {
-            "tokens": ["goat_plugins.erc20.token.PEPE", "goat_plugins.erc20.token.USDC"]
-          }
-        }
-      ]
-    },
-    {
-      "name": "groq",
-      "model": "llama-3.3-70b-versatile",
-      "temperature": 0.5
-    },
-    {
-      "name": "hyperbolic",
-      "model": "meta-llama/Meta-Llama-3-70B-Instruct"
-    },
-    {
-      "name": "galadriel",
-      "model": "gpt-3.5-turbo"
-    },
-    {
       "name": "sonic",
-      "network": "mainnet"
-    },
-    {
-      "name": "allora",
-      "chain_slug": "testnet"
-    },
-    {
-      "name": "evm",
-      "network": "ethereum"
-     },
-    
-    {
-      "name": "discord",
-      "message_read_count": 10,
-      "message_emoji_name": "❤️",
-      "server_id": "1234567890"
-    },
-    {
-      "name": "monad",
-      "rpc": "https://testnet-rpc.monad.xyz/"
+      "network": "testnet",
+      "use_mock_mode": false,
+      "contracts": {
+        "BerryTempAgent": "0xF28eC6250Fc5101D814dd78F9b1673b5e3a55cFa",
+        "BerryManager": "0x56516C11f350EeCe25AeA9e36ECd36CB6c71030d"
+      }
     }
   ],
   "tasks": [
-    {"name": "post-tweet", "weight": 1},
-    {"name": "reply-to-tweet", "weight": 1},
-    {"name": "like-tweet", "weight": 1}
+    {
+      "name": "monitor-berry-temperature",
+      "weight": 5,
+      "description": "Monitor and analyze temperature data for berry shipments",
+      "subtasks": [
+        "detect-temperature-breaches",
+        "calculate-breach-severity",
+        "predict-quality-impact",
+        "generate-alerts"
+      ],
+      "functions": [
+        "recordTemperature",
+        "getTemperatureHistory",
+        "analyzeAndAct"
+      ]
+    },
+    {
+      "name": "manage-batch-sequence",
+      "weight": 2,
+      "description": "Execute a complete batch lifecycle sequence",
+      "subtasks": [
+        "create-batch",
+        "record-temperatures",
+        "assess-quality",
+        "process-recommendations",
+        "complete-shipment"
+      ],
+      "functions": ["createBatch", "recordTemperature", "manageBatchLifecycle"]
+    },
+    {
+      "name": "manage-berry-quality",
+      "weight": 4,
+      "description": "Assess and predict berry quality based on temperature history",
+      "subtasks": [
+        "calculate-quality-score",
+        "predict-shelf-life",
+        "determine-shipment-viability",
+        "recommend-corrective-actions"
+      ],
+      "functions": [
+        "calculatePredictedImpact",
+        "calculateShelfLifeImpact",
+        "determineAgentAction"
+      ]
+    },
+    {
+      "name": "process-agent-recommendations",
+      "weight": 3,
+      "description": "Process agent recommendations and update supplier reputation",
+      "subtasks": [
+        "analyze-latest-prediction",
+        "implement-recommended-action",
+        "update-supplier-reputation",
+        "record-action-history"
+      ],
+      "functions": [
+        "processAgentRecommendation",
+        "updateSupplierReputation",
+        "takeSupplierAction"
+      ]
+    },
+    {
+      "name": "manage-batch-lifecycle",
+      "weight": 3,
+      "description": "Manage berry batch lifecycle from creation to delivery",
+      "subtasks": [
+        "create-berry-batches",
+        "update-batch-status",
+        "complete-shipments",
+        "generate-batch-reports"
+      ],
+      "functions": ["createBatch", "getBatchDetails", "getAgentPredictions"]
+    }
   ],
-  "use_time_based_weights": false,
+  "task_sequence": {
+    "default": [
+      "manage-batch-lifecycle",
+      "monitor-berry-temperature",
+      "manage-berry-quality",
+      "process-agent-recommendations"
+    ],
+    "critical": [
+      "monitor-berry-temperature",
+      "manage-berry-quality",
+      "process-agent-recommendations",
+      "manage-batch-lifecycle"
+    ]
+  },
+  "use_time_based_weights": true,
   "time_based_multipliers": {
-    "tweet_night_multiplier": 0.4,
-    "engagement_day_multiplier": 1.5
+    "peak_hours_multiplier": 1.5,
+    "off_peak_multiplier": 0.8,
+    "night_monitoring_multiplier": 2.0
+  },
+  "alert_thresholds": {
+    "temperature": {
+      "critical_high": 6.0,
+      "critical_low": -1.0,
+      "warning_high": 4.0,
+      "warning_low": 0.0,
+      "optimal_high": 3.0,
+      "optimal_low": 1.0
+    },
+    "shelf_life": {
+      "critical": 24,
+      "warning": 48,
+      "optimal": 72
+    },
+    "quality_score": {
+      "critical": 60,
+      "warning": 70,
+      "acceptable": 80,
+      "optimal": 90
+    }
+  },
+  "mock_data": {
+    "batches": [
+      {
+        "id": 0,
+        "berryType": "Strawberry",
+        "startTime": "2025-02-28T08:00:00Z",
+        "location": "Warehouse A",
+        "initialQuality": 100,
+        "temperatureReadings": [
+          {
+            "temperature": 2.0,
+            "timestamp": "2025-02-28T08:00:00Z",
+            "location": "Warehouse A"
+          },
+          {
+            "temperature": 2.5,
+            "timestamp": "2025-02-28T10:00:00Z",
+            "location": "Loading"
+          },
+          {
+            "temperature": 3.0,
+            "timestamp": "2025-02-28T12:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 4.5,
+            "timestamp": "2025-02-28T14:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 3.2,
+            "timestamp": "2025-02-28T16:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 2.2,
+            "timestamp": "2025-02-28T18:00:00Z",
+            "location": "Delivery"
+          }
+        ]
+      },
+      {
+        "id": 1,
+        "berryType": "Blueberry",
+        "startTime": "2025-02-28T09:00:00Z",
+        "location": "Warehouse B",
+        "initialQuality": 100,
+        "temperatureReadings": [
+          {
+            "temperature": 2.2,
+            "timestamp": "2025-02-28T09:00:00Z",
+            "location": "Warehouse B"
+          },
+          {
+            "temperature": 2.8,
+            "timestamp": "2025-02-28T11:00:00Z",
+            "location": "Loading"
+          },
+          {
+            "temperature": 5.1,
+            "timestamp": "2025-02-28T13:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 5.4,
+            "timestamp": "2025-02-28T15:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 3.0,
+            "timestamp": "2025-02-28T17:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 2.5,
+            "timestamp": "2025-02-28T19:00:00Z",
+            "location": "Delivery"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "berryType": "Raspberry",
+        "startTime": "2025-02-28T10:00:00Z",
+        "location": "Warehouse C",
+        "initialQuality": 100,
+        "temperatureReadings": [
+          {
+            "temperature": 1.8,
+            "timestamp": "2025-02-28T10:00:00Z",
+            "location": "Warehouse C"
+          },
+          {
+            "temperature": 2.3,
+            "timestamp": "2025-02-28T12:00:00Z",
+            "location": "Loading"
+          },
+          {
+            "temperature": 7.2,
+            "timestamp": "2025-02-28T14:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 6.8,
+            "timestamp": "2025-02-28T16:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 4.6,
+            "timestamp": "2025-02-28T18:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 2.3,
+            "timestamp": "2025-02-28T20:00:00Z",
+            "location": "Delivery"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "berryType": "Blackberry",
+        "startTime": "2025-02-28T11:00:00Z",
+        "location": "Warehouse A",
+        "initialQuality": 100,
+        "temperatureReadings": [
+          {
+            "temperature": 2.1,
+            "timestamp": "2025-02-28T11:00:00Z",
+            "location": "Warehouse A"
+          },
+          {
+            "temperature": 2.4,
+            "timestamp": "2025-02-28T13:00:00Z",
+            "location": "Loading"
+          },
+          {
+            "temperature": 2.8,
+            "timestamp": "2025-02-28T15:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 3.2,
+            "timestamp": "2025-02-28T17:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 3.5,
+            "timestamp": "2025-02-28T19:00:00Z",
+            "location": "Transit"
+          },
+          {
+            "temperature": 2.7,
+            "timestamp": "2025-02-28T21:00:00Z",
+            "location": "Delivery"
+          }
+        ]
+      }
+    ],
+    "suppliers": [
+      {
+        "id": "0x1e43eeB0307bb3466Cd237fE58570E6A3996d8ff",
+        "name": "SunnyHill Farms",
+        "reputation": 85,
+        "totalBatches": 12,
+        "successfulBatches": 10
+      },
+      {
+        "id": "0x2c5A142A15F6C4C870B2b6410A0A5EF8F884b840",
+        "name": "Berry Paradise",
+        "reputation": 92,
+        "totalBatches": 18,
+        "successfulBatches": 17
+      },
+      {
+        "id": "0x3D8c32B2F782C6dB6F9c8f5B7e908614415F4b4a",
+        "name": "FreshField Organics",
+        "reputation": 78,
+        "totalBatches": 8,
+        "successfulBatches": 6
+      }
+    ],
+    "agentActions": [
+      {
+        "batchId": 0,
+        "timestamp": "2025-02-28T14:00:00Z",
+        "temperature": 4.5,
+        "actionType": "Alert",
+        "actionDescription": "Temperature approaching upper limit. Monitor closely."
+      },
+      {
+        "batchId": 1,
+        "timestamp": "2025-02-28T13:00:00Z",
+        "temperature": 5.1,
+        "actionType": "Expedite",
+        "actionDescription": "Temperature breach detected. Expedite delivery to minimize quality impact."
+      },
+      {
+        "batchId": 2,
+        "timestamp": "2025-02-28T14:00:00Z",
+        "temperature": 7.2,
+        "actionType": "Reject",
+        "actionDescription": "Critical temperature breach detected. Quality severely compromised. Recommend rejection."
+      },
+      {
+        "batchId": 3,
+        "timestamp": "2025-02-28T19:00:00Z",
+        "temperature": 3.5,
+        "actionType": "No Action",
+        "actionDescription": "Temperature within acceptable limits. Continue standard delivery process."
+      }
+    ]
+  },
+  "berry_parameters": {
+    "temperature_ranges": {
+      "strawberry": { "min": 0, "optimal": 2, "max": 4 },
+      "blueberry": { "min": 0, "optimal": 2, "max": 4 },
+      "raspberry": { "min": 0, "optimal": 2, "max": 4 },
+      "blackberry": { "min": 0, "optimal": 2, "max": 4 }
+    },
+    "shelf_life_base_hours": {
+      "strawberry": 72,
+      "blueberry": 96,
+      "raspberry": 48,
+      "blackberry": 48
+    },
+    "quality_impact": {
+      "per_degree_above_max": 5,
+      "per_degree_below_min": 7,
+      "per_hour_in_breach": 2
+    }
+  },
+  "action_thresholds": {
+    "no_action": { "min_quality": 90, "min_shelf_life": 48 },
+    "alert": { "min_quality": 80, "min_shelf_life": 36 },
+    "expedite": { "min_quality": 70, "min_shelf_life": 24 },
+    "reroute": { "min_quality": 60, "min_shelf_life": 12 },
+    "reject": { "min_quality": 0, "min_shelf_life": 0 }
+  },
+  "health_monitoring": {
+    "enabled": true,
+    "check_interval_seconds": 300,
+    "alert_on_failures": true,
+    "max_failures_before_restart": 5,
+    "metrics_endpoints": [
+      {
+        "type": "prometheus",
+        "port": 9090,
+        "enabled": false
+      }
+    ]
+  },
+  "notification_settings": {
+    "critical_alerts": {
+      "enabled": true,
+      "channels": ["log", "email", "webhook"],
+      "email": "alerts@example.com",
+      "webhook_url": "https://example.com/webhook"
+    },
+    "status_reports": {
+      "enabled": true,
+      "interval_hours": 24,
+      "channels": ["log", "email"],
+      "include_metrics": true
+    }
   }
 }

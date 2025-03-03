@@ -1,0 +1,214 @@
+[
+  {
+    "type": "constructor",
+    "stateMutability": "undefined",
+    "payable": false,
+    "inputs": [{ "type": "address", "name": "_berryAgent" }]
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [{ "type": "address", "name": "owner" }]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [{ "type": "address", "name": "account" }]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "AgentRecommendationMade",
+    "inputs": [
+      { "type": "uint256", "name": "batchId", "indexed": true },
+      { "type": "string", "name": "recommendation", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "OwnershipTransferred",
+    "inputs": [
+      { "type": "address", "name": "previousOwner", "indexed": true },
+      { "type": "address", "name": "newOwner", "indexed": true }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "ReputationUpdated",
+    "inputs": [
+      { "type": "address", "name": "supplier", "indexed": true },
+      { "type": "uint256", "name": "newReputation", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "SupplierActionTaken",
+    "inputs": [
+      { "type": "address", "name": "supplier", "indexed": true },
+      { "type": "uint8", "name": "action", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "SupplierRegistered",
+    "inputs": [{ "type": "address", "name": "supplier", "indexed": true }]
+  },
+  {
+    "type": "function",
+    "name": "INITIAL_REPUTATION",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "MAX_REPUTATION",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "MIN_REPUTATION",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "berryAgent",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "address", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "getSupplierDetails",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "address", "name": "supplier" }],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "",
+        "components": [
+          { "type": "address", "name": "account" },
+          { "type": "bool", "name": "isRegistered" },
+          { "type": "uint256", "name": "reputation" },
+          { "type": "uint256", "name": "totalBatches" },
+          { "type": "uint256", "name": "successfulBatches" },
+          { "type": "uint256", "name": "lastActionTime" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getSupplierRecommendations",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "address", "name": "supplier" }],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "name": "",
+        "components": [
+          { "type": "uint256", "name": "timestamp" },
+          { "type": "uint256", "name": "batchId" },
+          { "type": "uint256", "name": "recommendedAction" },
+          { "type": "string", "name": "actionDescription" },
+          { "type": "bool", "name": "isImplemented" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "address", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "processAgentRecommendation",
+    "constant": false,
+    "payable": false,
+    "inputs": [{ "type": "uint256", "name": "batchId" }],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "registerSupplier",
+    "constant": false,
+    "payable": false,
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "constant": false,
+    "payable": false,
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "supplierRecommendations",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [
+      { "type": "address", "name": "" },
+      { "type": "uint256", "name": "" }
+    ],
+    "outputs": [
+      { "type": "uint256", "name": "timestamp" },
+      { "type": "uint256", "name": "batchId" },
+      { "type": "uint256", "name": "recommendedAction" },
+      { "type": "string", "name": "actionDescription" },
+      { "type": "bool", "name": "isImplemented" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "suppliers",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "address", "name": "" }],
+    "outputs": [
+      { "type": "address", "name": "account" },
+      { "type": "bool", "name": "isRegistered" },
+      { "type": "uint256", "name": "reputation" },
+      { "type": "uint256", "name": "totalBatches" },
+      { "type": "uint256", "name": "successfulBatches" },
+      { "type": "uint256", "name": "lastActionTime" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "constant": false,
+    "payable": false,
+    "inputs": [{ "type": "address", "name": "newOwner" }],
+    "outputs": []
+  }
+]

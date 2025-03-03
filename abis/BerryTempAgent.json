@@ -1,0 +1,283 @@
+[
+  {
+    "type": "constructor",
+    "stateMutability": "undefined",
+    "payable": false,
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OwnableInvalidOwner",
+    "inputs": [{ "type": "address", "name": "owner" }]
+  },
+  {
+    "type": "error",
+    "name": "OwnableUnauthorizedAccount",
+    "inputs": [{ "type": "address", "name": "account" }]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "AgentAlert",
+    "inputs": [
+      { "type": "uint256", "name": "batchId", "indexed": true },
+      { "type": "string", "name": "alertMessage", "indexed": false },
+      { "type": "uint8", "name": "action", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "BatchCreated",
+    "inputs": [
+      { "type": "uint256", "name": "batchId", "indexed": true },
+      { "type": "string", "name": "berryType", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "OwnershipTransferred",
+    "inputs": [
+      { "type": "address", "name": "previousOwner", "indexed": true },
+      { "type": "address", "name": "newOwner", "indexed": true }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "QualityUpdated",
+    "inputs": [
+      { "type": "uint256", "name": "batchId", "indexed": true },
+      { "type": "uint256", "name": "newScore", "indexed": false },
+      { "type": "uint256", "name": "predictedShelfLife", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "TemperatureRecorded",
+    "inputs": [
+      { "type": "uint256", "name": "batchId", "indexed": true },
+      { "type": "int256", "name": "temperature", "indexed": false },
+      { "type": "bool", "name": "isBreached", "indexed": false }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "BREACH_PENALTY",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "MAX_TEMP",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "int256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "MIN_TEMP",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "int256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "OPTIMAL_TEMP",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "int256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "SHELF_LIFE_BASE",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "agentPredictions",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [
+      { "type": "uint256", "name": "" },
+      { "type": "uint256", "name": "" }
+    ],
+    "outputs": [
+      { "type": "uint256", "name": "timestamp" },
+      { "type": "uint256", "name": "predictedQuality" },
+      { "type": "uint256", "name": "recommendedAction" },
+      { "type": "string", "name": "actionDescription" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "batchCount",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "berryBatches",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "uint256", "name": "" }],
+    "outputs": [
+      { "type": "uint256", "name": "batchId" },
+      { "type": "string", "name": "berryType" },
+      { "type": "uint256", "name": "startTime" },
+      { "type": "uint256", "name": "endTime" },
+      { "type": "bool", "name": "isActive" },
+      { "type": "uint8", "name": "status" },
+      { "type": "uint256", "name": "qualityScore" },
+      { "type": "uint256", "name": "predictedShelfLife" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "createBatch",
+    "constant": false,
+    "payable": false,
+    "inputs": [{ "type": "string", "name": "berryType" }],
+    "outputs": [{ "type": "uint256", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "getAgentPredictions",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "uint256", "name": "batchId" }],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "name": "",
+        "components": [
+          { "type": "uint256", "name": "timestamp" },
+          { "type": "uint256", "name": "predictedQuality" },
+          { "type": "uint256", "name": "recommendedAction" },
+          { "type": "string", "name": "actionDescription" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getBatchDetails",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "uint256", "name": "batchId" }],
+    "outputs": [
+      {
+        "type": "tuple",
+        "name": "",
+        "components": [
+          { "type": "uint256", "name": "batchId" },
+          { "type": "string", "name": "berryType" },
+          { "type": "uint256", "name": "startTime" },
+          { "type": "uint256", "name": "endTime" },
+          { "type": "bool", "name": "isActive" },
+          { "type": "uint8", "name": "status" },
+          { "type": "uint256", "name": "qualityScore" },
+          { "type": "uint256", "name": "predictedShelfLife" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "getTemperatureHistory",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [{ "type": "uint256", "name": "batchId" }],
+    "outputs": [
+      {
+        "type": "tuple[]",
+        "name": "",
+        "components": [
+          { "type": "uint256", "name": "timestamp" },
+          { "type": "int256", "name": "temperature" },
+          { "type": "string", "name": "location" },
+          { "type": "bool", "name": "isBreached" },
+          { "type": "uint256", "name": "predictedImpact" }
+        ]
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "owner",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [],
+    "outputs": [{ "type": "address", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "recordTemperature",
+    "constant": false,
+    "payable": false,
+    "inputs": [
+      { "type": "uint256", "name": "batchId" },
+      { "type": "int256", "name": "temperature" },
+      { "type": "string", "name": "location" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "renounceOwnership",
+    "constant": false,
+    "payable": false,
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "tempReadings",
+    "constant": true,
+    "stateMutability": "view",
+    "payable": false,
+    "inputs": [
+      { "type": "uint256", "name": "" },
+      { "type": "uint256", "name": "" }
+    ],
+    "outputs": [
+      { "type": "uint256", "name": "timestamp" },
+      { "type": "int256", "name": "temperature" },
+      { "type": "string", "name": "location" },
+      { "type": "bool", "name": "isBreached" },
+      { "type": "uint256", "name": "predictedImpact" }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "transferOwnership",
+    "constant": false,
+    "payable": false,
+    "inputs": [{ "type": "address", "name": "newOwner" }],
+    "outputs": []
+  }
+]

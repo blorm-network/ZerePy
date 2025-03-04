@@ -1,5 +1,6 @@
 import logging
 from typing import Any, List, Optional, Type, Dict
+from src.connections.agentipy_connection import AgentipyConnection
 from src.connections.base_connection import BaseConnection
 from src.connections.anthropic_connection import AnthropicConnection
 from src.connections.eternalai_connection import EternalAIConnection
@@ -58,6 +59,8 @@ class ConnectionManager:
             return HyperbolicConnection
         elif class_name == "galadriel":
             return GaladrielConnection
+        elif class_name == "agentipy":
+            return AgentipyConnection
         elif class_name == "sonic":
             return SonicConnection
         elif class_name == "discord":

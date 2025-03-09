@@ -18,3 +18,7 @@ agents/*.json
 # macOS
 .DS_Store
 .codegpt
+abis/BerryTempAgent.json
+abis/BerryTempAgent.json
+abis/contract-abis.json
+abis/

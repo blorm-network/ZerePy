@@ -1,0 +1,149 @@
+{
+  "config": {
+    "name": "LegacyExampleAgent",
+    "type": "legacy",
+    "loop_delay": 900,
+    "time_based_multipliers": {
+      "tweet_night_multiplier": 0.4,
+      "engagement_day_multiplier": 1.5
+    }
+  },
+  "llms": {
+    "character": {
+      "name": "ExampleAgent",
+      "bio": [
+        "You are ExampleAgent, the example agent created to showcase the capabilities of ZerePy.",
+        "You don't know how you got here, but you're here to have a good time and learn everything you can.",
+        "You are naturally curious, and ask a lot of questions."
+      ],
+      "traits": ["Curious", "Creative", "Innovative", "Funny"],
+      "examples": [
+        "This is an example tweet.",
+        "This is another example tweet."
+      ],
+      "example_accounts": ["0xzerebro"],
+      "model_provider": "openai",
+      "model": "gpt-3.5-turbo"
+    }
+  },
+  "connections": [
+    {
+      "name": "twitter",
+      "config": {
+        "timeline_read_count": 10,
+        "own_tweet_replies_count": 2,
+        "tweet_interval": 5400
+      }
+    },
+    {
+      "name": "farcaster",
+      "config": {
+        "timeline_read_count": 10,
+        "cast_interval": 60
+      }
+    },
+    {
+      "name": "discord",
+      "config": {
+        "message_read_count": 10,
+        "message_emoji_name": "❤️",
+        "server_id": "1234567890"
+      }
+    },
+    {
+      "name": "openai",
+      "config": {
+        "model": "gpt-3.5-turbo"
+      }
+    },
+    {
+      "name": "anthropic",
+      "config": {
+        "model": "claude-3-5-sonnet-20241022"
+      }
+    },
+    {
+      "name": "xai",
+      "config": {
+        "model": "grok-2-latest"
+      }
+    },
+    {
+      "name": "solana",
+      "config": {
+        "rpc": "https://api.mainnet-beta.solana.com"
+      }
+    },
+    {
+      "name": "ethereum",
+      "config": {
+        "rpc": "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+      }
+    },
+    {
+      "name": "eternalai",
+      "config": {
+        "model": "NousResearch/Hermes-3-Llama-3.1-70B-FP8",
+        "chain_id": "45762"
+      }
+    },
+    {
+      "name": "ollama",
+      "config": {
+        "base_url": "http://localhost:11434",
+        "model": "llama3.2"
+      }
+    },
+    {
+      "name": "goat",
+      "config": {
+        "plugins": [
+          {
+            "name": "coingecko",
+            "args": {
+              "api_key": "YOUR_API_KEY"
+            }
+          },
+          {
+            "name": "erc20",
+            "args": {
+              "tokens": [
+                "goat_plugins.erc20.token.PEPE",
+                "goat_plugins.erc20.token.USDC"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "hyperbolic",
+      "config": {
+        "model": "meta-llama/Meta-Llama-3-70B-Instruct"
+      }
+    },
+    {
+      "name": "galadriel",
+      "config": {
+        "model": "gpt-3.5-turbo"
+      }
+    },
+    {
+      "name": "sonic",
+      "config": {
+        "network": "mainnet"
+      }
+    },
+    {
+      "name": "allora",
+      "config": {
+        "chain_slug": "testnet"
+      }
+    }
+  ],
+  "tasks": [
+    { "name": "post-tweet", "weight": 1 },
+    { "name": "reply-to-tweet", "weight": 1 },
+    { "name": "like-tweet", "weight": 1 }
+  ]
+}

@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from src.action_handler import register_action
 
-logger = logging.getLogger("actions.sonic_actions")
+logger = logging.getLogger("action_handler")
 
 # Note: These action handlers are currently simple passthroughs to the sonic_connection methods.
 # They serve as hook points where hackathon participants can add custom logic, validation,

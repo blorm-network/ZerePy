@@ -49,18 +49,18 @@ class TwitterConnection(BaseConnection):
     def register_actions(self) -> None:
         """Register available Twitter actions"""
         self.actions = {
-            "get-latest-tweets": Action(
-                name="get-latest-tweets",
+            "get-latest-tweets-from-user": Action(
+                name="get-latest-tweets-from-user",
                 parameters=[
                     ActionParameter("username", True, str, "Twitter username to get tweets from"),
-                    ActionParameter("count", False, int, "Number of tweets to retrieve")
+                    ActionParameter("count", False, int, "Number of tweets to retrieve (10-100)")
                 ],
-                description="Get the latest tweets from a user"
+                description="Get the latest tweets by a specific user"
             ),
             "post-tweet": Action(
                 name="post-tweet",
                 parameters=[
-                    ActionParameter("message", True, str, "Text content of the tweet")
+                    ActionParameter("message", True, str, "Text content of the tweet (280 characters max)")
                 ],
                 description="Post a new tweet"
             ),
@@ -69,7 +69,7 @@ class TwitterConnection(BaseConnection):
                 parameters=[
                     ActionParameter("count", False, int, "Number of tweets to read from timeline")
                 ],
-                description="Read tweets from user's timeline"
+                description="Read tweets on the timeline"
             ),
             "like-tweet": Action(
                 name="like-tweet",
@@ -304,7 +304,7 @@ class TwitterConnection(BaseConnection):
             # Save credentials
             if not os.path.exists('.env'):
                 logger.debug("Creating new .env file")
-                with open('.env', 'w') as f:
+                with open('.env', 'w', encoding="utf-8") as f:
                     f.write('')
 
             # Create temporary OAuth session to get user ID
@@ -439,7 +439,7 @@ class TwitterConnection(BaseConnection):
         logger.debug(f"Retrieved {len(tweets)} tweets")
         return tweets
 
-    def get_latest_tweets(self,
+    def get_latest_tweets_from_user(self,
                           username: str,
                           count: int = 10,
                           **kwargs) -> list:

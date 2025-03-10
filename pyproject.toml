@@ -12,7 +12,7 @@ python = "^3.11"
 python-dotenv = "^1.0.1"
 openai = "^1.57.2"
 prompt-toolkit = "^3.0.48"
-anthropic = "^0.42.0"
+anthropic = "^0.45.0"
 farcaster = "^0.7.11"
 goat-sdk = "^0.1.1"
 goat-sdk-wallet-web3 = "^0.1.1"
@@ -29,6 +29,9 @@ requests-oauthlib = "^1.3.1"
 together = "^1.3.14"
 fastapi = { version = "^0.109.0", optional = true }
 uvicorn = { version = "^0.27.0", optional = true }
+langgraph = "^0.2.68"
+langchain-openai = "^0.3.6"
+langchain-anthropic = "^0.3.7"
 
 [tool.poetry.extras]
 server = ["fastapi", "uvicorn", "requests"]

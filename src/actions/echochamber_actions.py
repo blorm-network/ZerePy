@@ -1,28 +1,31 @@
 import time,random
+import logging
 from src.action_handler import register_action
 from src.prompts import REPLY_ECHOCHAMBER_PROMPT, POST_ECHOCHAMBER_PROMPT
+
+logger = logging.getLogger("action_handler")
 
 @register_action("post-echochambers")
 def post_echochambers(agent, **kwargs):
     current_time = time.time()
 
-    # Initialize state
-    if "echochambers_last_message" not in agent.state:
-        agent.state["echochambers_last_message"] = 0
-    if "echochambers_replied_messages" not in agent.state:
-        agent.state["echochambers_replied_messages"] = set()
+    # Initialize context
+    if "echochambers_last_message" not in agent.context:
+        agent.context["echochambers_last_message"] = 0
+    if "echochambers_replied_messages" not in agent.context:
+        agent.context["echochambers_replied_messages"] = set()
     
-    if current_time - agent.state["echochambers_last_message"] > agent.echochambers_message_interval:
-        agent.logger.info("\n📝 GENERATING NEW ECHOCHAMBERS MESSAGE")
+    if current_time - agent.context["echochambers_last_message"] > agent.echochambers_message_interval:
+        logger.info("\n📝 GENERATING NEW ECHOCHAMBERS MESSAGE")
         
         # Generate message based on room topic and tags
         previous_messages = agent.connection_manager.connections["echochambers"].sent_messages
         previous_content = "\n".join([f"- {msg['content']}" for msg in previous_messages])
-        agent.logger.info(f"Found {len(previous_messages)} messages in post history")
+        logger.info(f"Found {len(previous_messages)} messages in post history")
         
         prompt  = POST_ECHOCHAMBER_PROMPT.format(
-            room_topic=agent.state['room_info']['topic'],
-            tags=", ".join(agent.state['room_info']['tags']),
+            room_topic=agent.context['room_info']['topic'],
+            tags=", ".join(agent.context['room_info']['tags']),
             previous_content=previous_content
         )
         message = agent.prompt_llm(prompt)
@@ -34,7 +37,7 @@ def post_echochambers(agent, **kwargs):
                 action_name="send-message",
                 params=[message]  # Pass as list of values
             )
-            agent.state["echochambers_last_message"] = current_time
+            agent.context["echochambers_last_message"] = current_time
             agent.logger.info("✅ Message posted successfully!")
             return True
     return False
@@ -44,8 +47,8 @@ def reply_echochambers(agent, **kwargs):
     agent.logger.info("\n🔍 CHECKING FOR MESSAGES TO REPLY TO")
     
     # Initialize replied messages set if not exists
-    if "echochambers_replied_messages" not in agent.state:
-        agent.state["echochambers_replied_messages"] = set()
+    if "echochambers_replied_messages" not in agent.context:
+        agent.context["echochambers_replied_messages"] = set()
         
 
     # Get recent messages
@@ -72,7 +75,7 @@ def reply_echochambers(agent, **kwargs):
             # 1. It's our message
             # 2. We've already replied to it
             if (sender_username == agent.connection_manager.connections["echochambers"].config["sender_username"] or 
-                message_id in agent.state.get("echochambers_replied_messages", set())):
+                message_id in agent.context.get("echochambers_replied_messages", set())):
                 agent.logger.info(f"Skipping message from {sender_username} (already replied or own message)")
                 continue
                 
@@ -83,8 +86,8 @@ def reply_echochambers(agent, **kwargs):
             prompt = REPLY_ECHOCHAMBER_PROMPT.format(
                 content=content,
                 sender_username=sender_username,
-                room_topic=agent.state['room_info']['topic'],
-                tags=", ".join(agent.state['room_info']['tags']),
+                room_topic=agent.context['room_info']['topic'],
+                tags=", ".join(agent.context['room_info']['tags']),
                 username_prompt=username_prompt
             )
             reply = agent.prompt_llm(prompt)
@@ -96,7 +99,7 @@ def reply_echochambers(agent, **kwargs):
                     action_name="send-message",
                     params=[reply]
                 )
-                agent.state["echochambers_replied_messages"].add(message_id)
+                agent.context["echochambers_replied_messages"].add(message_id)
                 agent.logger.info("✅ Reply posted successfully!")
                 return True
     else:

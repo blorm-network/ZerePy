@@ -12,7 +12,11 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from src.agent import ZerePyAgent
+from src.legacy_agent import LegacyZerePyAgent
+from src.agent_factory import AgentFactory
 from src.helpers import print_h_bar
+from src.langgraph.langgraph_agent import LangGraphAgent
+from src.migration_script import migrate_config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -90,10 +94,21 @@ class ZerePyCLI:
         self._register_command(
             Command(
                 name="agent-loop",
-                description="Starts the current agent's autonomous behavior loop.",
+                description="Starts the current agent's loop.",
                 tips=["Press Ctrl+C to stop the loop"],
                 handler=self.agent_loop,
                 aliases=['loop', 'start']
+            )
+        )
+
+           # Agent query command
+        self._register_command(
+            Command(
+                name="agent-query",
+                description="Allows for testing the response of the agent.",
+                tips=["Press Ctrl+C to stop the execution"],
+                handler=self.agent_query,
+                aliases=['query', 'invoke']
             )
         )
         
@@ -153,7 +168,18 @@ class ZerePyCLI:
                 aliases=['talk']
             )
         )
-        
+
+        # Migrate agent config command
+        self._register_command(
+            Command(
+                name="migrate",
+                description="Migrate agent configuration from old to new format.",
+                tips=["Use this command to convert old agent JSON files to the new format"],
+                handler=self.migrate_agent_config,
+                aliases=['migrate-config']
+            )
+        )
+
         ################## CONNECTIONS ################## 
         # List actions command
         self._register_command(
@@ -338,8 +364,9 @@ class ZerePyCLI:
             logger.info(f"\nNo default agent is loaded, please use the load-agent command to do that.")
 
     def _load_agent_from_file(self, agent_name):
-        try: 
-            self.agent = ZerePyAgent(agent_name)
+        try:
+            agent_path = Path("agents") / f"{agent_name}.json"
+            self.agent = AgentFactory.load_agent(agent_path)
             logger.info(f"\n✅ Successfully loaded agent: {self.agent.name}")
         except FileNotFoundError:
             logger.error(f"Agent file not found: {agent_name}")
@@ -354,7 +381,7 @@ class ZerePyCLI:
         agent_general_config_path = Path("agents") / "general.json"
         file = None
         try:
-            file = open(agent_general_config_path, 'r')
+            file = open(agent_general_config_path, 'r', encoding="utf-8")
             data = json.load(file)
             if not data.get('default_agent'):
                 logger.error('No default agent defined, please set one in general.json')
@@ -419,6 +446,26 @@ class ZerePyCLI:
             logger.info("\n🛑 Agent loop stopped by user.")
         except Exception as e:
             logger.error(f"Error in agent loop: {e}")
+    
+    def agent_query(self, input_list: List[str]) -> None:
+        """Handle agent loop command"""
+        if self.agent is None:
+            logger.info("No agent is currently loaded. Use 'load-agent' to load an agent.")
+            return
+        
+        if (isinstance(self.agent, LegacyZerePyAgent)):
+            logger.info("This command is not supported for legacy agents.")
+            return
+
+        try:
+            state = self.agent.process_task()
+            logger.debug(f"FINAL STATE: {state}")
+            logger.info(f"Final response: {state['final_response']}")
+
+        except KeyboardInterrupt:
+            logger.info("\n🛑 Agent loop stopped by user.")
+        except Exception as e:
+            logger.error(f"Error when querying agent: {e}")
 
     def list_agents(self, input_list: List[str]) -> None:
         """Handle list agents command"""
@@ -462,19 +509,19 @@ class ZerePyCLI:
         agent_general_config_path = Path("agents") / "general.json"
         file = None
         try:
-            file = open(agent_general_config_path, 'r')
+            file = open(agent_general_config_path, 'r', encoding="utf-8")
             data = json.load(file)
             agent_file_name = input_list[1]
             # if file does not exist, refuse to set it as default
             try:
                 agent_path = Path("agents") / f"{agent_file_name}.json"
-                open(agent_path, 'r')
+                open(agent_path, 'r', encoding="utf-8")
             except FileNotFoundError:
                 logging.error("Agent file not found.")
                 return
             
             data['default_agent'] = input_list[1]
-            with open(agent_general_config_path, 'w') as f:
+            with open(agent_general_config_path, 'w', encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
             logger.info(f"Agent {agent_file_name} is now set as default.")
         except FileNotFoundError:
@@ -516,12 +563,15 @@ class ZerePyCLI:
 
     def chat_session(self, input_list: List[str]) -> None:
         """Handle chat command"""
+
         if self.agent is None:
             logger.info("No agent loaded. Use 'load-agent' first.")
             return
+        
 
-        if not self.agent.is_llm_set:
-            self.agent._setup_llm_provider()
+        #load langgraph agent 
+        langgraph_agent = LangGraphAgent("openai","gpt-3.5-turbo",True,self.agent.connection_manager)
+        messages = []
 
         logger.info(f"\nStarting chat with {self.agent.name}")
         print_h_bar()
@@ -529,15 +579,31 @@ class ZerePyCLI:
         while True:
             try:
                 user_input = self.session.prompt("\nYou: ").strip()
+                
                 if user_input.lower() == 'exit':
                     break
-                
-                response = self.agent.prompt_llm(user_input)
+
+                messages.append({"role": "user", "content": user_input})
+
+                response = langgraph_agent.invoke_chat(messages)
+                messages.append({"role": "assistant", "content": response})
+
                 logger.info(f"\n{self.agent.name}: {response}")
                 print_h_bar()
                 
             except KeyboardInterrupt:
                 break
+            
+    def migrate_agent_config(self, input_list: List[str]) -> None:
+        """Migrate agent configuration from old to new format."""
+        print_h_bar()
+        
+        agent_file_name = input("Enter the name of the agent file to migrate: ").strip()
+        agent_type_input = input("Enter the agent type (a for autonomous, l for legacy): ").strip().lower()
+        
+        agent_type = "autonomous" if agent_type_input == "a" else "legacy"
+        
+        migrate_config(agent_file_name, agent_type)
 
     def exit(self, input_list: List[str]) -> None:
         """Exit the CLI gracefully"""

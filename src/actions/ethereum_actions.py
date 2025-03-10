@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from src.action_handler import register_action
 
-logger = logging.getLogger("actions.ethereum_actions")
+logger = logging.getLogger("action_handler")
 
 @register_action("get-token-by-ticker")
 def get_token_by_ticker(agent, **kwargs):

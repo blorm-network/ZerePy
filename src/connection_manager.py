@@ -90,7 +90,7 @@ class ConnectionManager:
         try:
             name = config_dic["name"]
             connection_class = self._class_name_to_type(name)
-            connection = connection_class(config_dic)
+            connection = connection_class(config_dic["config"])
             self.connections[name] = connection
         except Exception as e:
             logging.error(f"Failed to initialize connection {name}: {e}")
@@ -130,6 +130,19 @@ class ConnectionManager:
         except Exception as e:
             logging.error(f"\nAn error occurred: {e}")
             return False
+    
+    def get_connection(self, connection_name: str) -> Optional[BaseConnection]:
+        """Get a specific connection by name"""
+        try:
+            return self.connections[connection_name]
+        except KeyError:
+            logging.error(
+                "\nUnknown connection. Try 'list-connections' to see all supported connections."
+            )
+            return None
+        except Exception as e:
+            logging.error(f"\nAn error occurred: {e}")
+            return None
 
     def list_connections(self) -> None:
         """List all available connections and their status"""
@@ -139,6 +152,17 @@ class ConnectionManager:
                 "✅ Configured" if connection.is_configured() else "❌ Not Configured"
             )
             logging.info(f"- {name}: {status}")
+        #return all connections
+        return self.connections
+    
+    def get_connections(self):
+        return self.connections
+
+    def refresh_connections(self) -> None:
+        """Force a refresh (re-registration) on all connections needing it."""
+        for name, connection in self.connections.items():
+            if isinstance(connection, GoatConnection): #for now, only GoatConnection needs to be refreshed due to wallet registration (temp fix)
+                connection.is_configured()
 
     def list_actions(self, connection_name: str) -> None:
         """List all available actions for a specific connection"""
@@ -162,6 +186,17 @@ class ConnectionManager:
                     req = "required" if param.required else "optional"
                     logging.info(f"    - {param.name} ({req}): {param.description}")
 
+        except KeyError:
+            logging.error(
+                "\nUnknown connection. Try 'list-connections' to see all supported connections."
+            )
+        except Exception as e:
+            logging.error(f"\nAn error occurred: {e}")
+    
+    def get_actions(self, connection_name: str) -> Dict[str, Any]:
+        try:
+            connection = self.connections[connection_name]
+            return connection.actions
         except KeyError:
             logging.error(
                 "\nUnknown connection. Try 'list-connections' to see all supported connections."

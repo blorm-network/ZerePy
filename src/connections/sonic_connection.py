@@ -154,7 +154,7 @@ class SonicConnection(BaseConnection):
 
         try:
             if not os.path.exists('.env'):
-                with open('.env', 'w') as f:
+                with open('.env', 'w', encoding="utf-8") as f:
                     f.write('')
 
             private_key = input("\nEnter your wallet private key: ")

@@ -101,7 +101,7 @@ class HyperbolicConnection(BaseConnection):
 
         try:
             if not os.path.exists('.env'):
-                with open('.env', 'w') as f:
+                with open('.env', 'w', encoding="utf-8") as f:
                     f.write('')
 
             set_key('.env', 'HYPERBOLIC_API_KEY', api_key)

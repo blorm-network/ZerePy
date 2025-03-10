@@ -198,7 +198,7 @@ class SolanaConnection(BaseConnection):
                 parameters=[
                     ActionParameter("ticker", True, str, "Token ticker symbol")
                 ],
-                description="Get token data by ticker symbol",
+                description="Get token data by ticker symbol/name",
             ),
             "get-token-by-address": Action(
                 name="get-token-by-address",
@@ -240,7 +240,7 @@ class SolanaConnection(BaseConnection):
             Keypair.from_base58_string(private_key)
 
             if not os.path.exists(".env"):
-                with open(".env", "w") as f:
+                with open(".env", "w", encoding="utf-8") as f:
                     f.write("")
 
             set_key(".env", "SOLANA_PRIVATE_KEY", private_key)

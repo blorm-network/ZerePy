@@ -92,23 +92,74 @@ class BaseConnection(ABC):
         """
         pass
 
-    def perform_action(self, action_name: str, **kwargs) -> Any:
+    def perform_action(self, action_name: str, params: List[Any] = None, **kwargs) -> Any:
         """
         Perform a registered action with the given parameters.
         
         Args:
             action_name: Name of the action to perform
-            **kwargs: Parameters for the action
-            
+            params: List of positional parameters for the action
+            **kwargs: Additional keyword parameters for the action
+        
         Returns:
             Any: Result of the action
-            
+        
         Raises:
             KeyError: If the action is not registered
             ValueError: If the action parameters are invalid
         """
+        # Parse action_name if it contains parameters (e.g., "action:param1:param2:param3")
+        if ":" in action_name:
+            parts = action_name.split(":")
+            base_action = parts[0]
+            embedded_params = parts[1:]
+            
+            if base_action in self.actions:
+                action_name = base_action
+                # Add embedded params to the params list
+                if params is None:
+                    params = embedded_params
+                else:
+                    params = embedded_params + list(params)
+        
         if action_name not in self.actions:
             raise KeyError(f"Unknown action: {action_name}")
+        
+        action_def = self.actions[action_name]
+        
+        # Find the actual handler
+        if isinstance(action_def, Action):
+            # Extract parameter mappings
+            param_dict = {}
+            if params and hasattr(action_def, 'parameters'):
+                for i, param_def in enumerate(action_def.parameters):
+                    if i < len(params):
+                        try:
+                            # Try to convert according to expected type
+                            param_dict[param_def.name] = param_def.type(params[i])
+                        except (ValueError, TypeError):
+                            # Fall back to string if conversion fails
+                            param_dict[param_def.name] = params[i]
             
-        handler = self.actions[action_name]
-        return handler(**kwargs)
+            # Add any keyword arguments
+            param_dict.update(kwargs)
+            
+            # Handle different implementations of the action pattern
+            handler_name = action_name.replace('-', '_')
+            if hasattr(self, handler_name):
+                # Method on the class
+                handler = getattr(self, handler_name)
+                return handler(**param_dict)
+            else:
+                # Standalone handler
+                return action_def(**param_dict)
+        else:
+            # Direct function reference
+            handler = action_def
+            
+            # If we have params, try to build kwargs from them
+            if params:
+                # For direct function references, we just pass the parameters as positional arguments
+                return handler(*params, **kwargs)
+            else:
+                return handler(**kwargs)
